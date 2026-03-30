@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#06060C"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="description" content="Good Times™ — Your city concierge for nightlife, events, dining & culture. 800+ venues across 10 cities. Download the app."/>
+  <meta property="og:title" content="Good Times™ — What's the Move?"/>
+  <meta property="og:description" content="Discover 800+ curated venues, trending events, and the best nightlife across 10 cities."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://thegoodtimesworldwide.com"/>
+  <title>Good Times™ — What's the Move?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #06060C;
+      --bg2: #0E0E14;
+      --gold: #D4A853;
+      --gold-dim: rgba(212,168,83,0.25);
+      --cream: #F2F0EB;
+      --muted: #BFA97A;
+      --text: #FFFFFF;
+      --text-sec: #E8DCC8;
+      --serif: 'Playfair Display', Georgia, serif;
+      --sans: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    ::selection { background: var(--gold); color: var(--bg); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+    img { -webkit-user-drag: none; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ═══ PRELOADER ═══ */
+    .preloader {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    .preloader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+    .preloader-logo {
+      width: 80px; height: 80px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      animation: preloader-pulse 1.5s ease-in-out infinite;
+    }
+    .preloader-logo span {
+      font-family: var(--serif); font-size: 28px; font-weight: 700;
+      color: var(--gold); letter-spacing: 2px;
+    }
+    @keyframes preloader-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.7; }
+    }
+
+    /* ═══ NAV ═══ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 20px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(180deg, rgba(6,6,12,0.95) 0%, rgba(6,6,12,0) 100%);
+      transition: background 0.3s;
+    }
+    nav.scrolled { background: rgba(6,6,12,0.97); backdrop-filter: blur(20px); }
+    .nav-brand {
+      font-family: var(--serif); font-size: 18px; font-weight: 600;
+      color: var(--gold); letter-spacing: 3px;
+    }
+    .nav-cta {
+      padding: 10px 28px; border-radius: 100px;
+      background: linear-gradient(135deg, var(--gold), #B8942F);
+      color: var(--bg); font-weight: 700; font-size: 13px;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer; border: none; font-family: var(--sans);
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,168,83,0.3); }
+
+    /* ═══ HERO ═══ */
+    .hero {
+      position: relative; height: 100vh; min-height: 700px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, rgba(212,168,83,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 20% 80%, rgba(212,168,83,0.04) 0%, transparent 50%),
+        var(--bg);
+    }
+    .hero-grain {
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.5; pointer-events: none;
+    }
+    .hero-content {
+      position: relative; z-index: 2;
+      text-align: center; padding: 0 20px;
+      max-width: 900px;
+    }
+    .hero-tag {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 5px;
+      color: var(--gold); text-transform: uppercase;
+      margin-bottom: 24px;
+      opacity: 0; animation: fadeUp 0.8s ease 0.5s forwards;
+    }
+    .hero-title {
+      font-family: var(--serif); font-weight: 300;
+      font-size: clamp(42px, 10vw, 96px);
+      line-height: 1.05; letter-spacing: -1px;
+      margin-bottom: 28px;
+      opacity: 0; animation: fadeUp 0.8s ease 0.7s forwards;
+    }
+    .hero-title em {
+      font-style: italic; color: var(--gold);
+      font-weight: 400;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-sec); line-height: 1.6;
+      max-width: 600px; margin: 0 auto 40px;
+      opacity: 0; animation: fadeUp 0.8s ease 0.9s forwards;
+    }
+    .hero-cta-row {
+      display: flex; gap: 16px; justify-content: center; align-items: center;
+      flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.8s ease 1.1s forwards;
+    }
+    .cta-primary {
+      padding: 16px 48px; border-radius: 100px;
+      background: linear-gradient(135deg, var(--gold), #B8942F);
+      color: var(--bg); font-weight: 700; font-size: 15px;
+      letter-spacing: 1px; text-transform: uppercase;
+      border: none; cursor: pointer; font-family: var(--sans);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .cta-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(212,168,83,0.35); }
+    .cta-secondary {
+      padding: 16px 36px; border-radius: 100px;
+      background: transparent;
+      color: var(--gold); font-weight: 600; font-size: 14px;
+      letter-spacing: 1px; text-transform: uppercase;
+      border: 1px solid var(--gold-dim); cursor: pointer; font-family: var(--sans);
+      transition: all 0.3s;
+    }
+    .cta-secondary:hover { border-color: var(--gold); background: rgba(212,168,83,0.08); }
+    .hero-scroll {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      opacity: 0; animation: fadeUp 0.8s ease 1.5s forwards;
+    }
+    .hero-scroll span {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 3px;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .scroll-line {
+      width: 1px; height: 40px; background: linear-gradient(180deg, var(--gold), transparent);
+      animation: scrollPulse 2s ease infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+      50% { opacity: 1; transform: scaleY(1); }
+    }
+
+    /* ═══ PHONE MOCKUP SECTION ═══ */
+    .phone-section {
+      padding: 120px 40px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 80px; max-width: 1200px; margin: 0 auto;
+      position: relative;
+    }
+    .phone-frame {
+      width: 280px; min-width: 280px; height: 580px;
+      border-radius: 40px; overflow: hidden;
+      border: 3px solid rgba(212,168,83,0.3);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212,168,83,0.08);
+      position: relative;
+      background: var(--bg);
+    }
+    .phone-notch {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 28px; background: var(--bg);
+      border-radius: 0 0 20px 20px; z-index: 5;
+    }
+    .phone-screen {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      padding: 40px 16px 20px;
+      background: linear-gradient(180deg, #06060C 0%, #0E0E14 100%);
+    }
+    .phone-header {
+      text-align: center; margin-bottom: 20px;
+    }
+    .phone-header h3 {
+      font-family: var(--serif); font-size: 18px; color: var(--gold);
+      margin-bottom: 4px;
+    }
+    .phone-header p { font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+    .phone-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 12px;
+      margin-bottom: 10px;
+      display: flex; gap: 12px; align-items: center;
+    }
+    .phone-card-img {
+      width: 56px; height: 56px; border-radius: 8px;
+      background: linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05));
+      flex-shrink: 0;
+    }
+    .phone-card-text h4 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .phone-card-text p { font-size: 10px; color: var(--muted); }
+    .phone-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; }
+    .phone-nav-bar {
+      margin-top: auto;
+      display: flex; justify-content: space-around;
+      padding: 12px 0 4px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .phone-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      font-size: 9px; color: var(--muted); letter-spacing: 1px;
+    }
+    .phone-nav-item.active { color: var(--gold); }
+    .phone-nav-icon {
+      width: 20px; height: 20px; border-radius: 4px;
+      border: 1px solid currentColor; opacity: 0.5;
+    }
+    .phone-nav-item.active .phone-nav-icon { opacity: 1; background: rgba(212,168,83,0.15); }
+
+    .phone-text {
+      flex: 1; max-width: 480px;
+    }
+    .phone-text h2 {
+      font-family: var(--serif); font-size: clamp(32px, 5vw, 48px);
+      font-weight: 300; line-height: 1.15;
+      margin-bottom: 24px;
+    }
+    .phone-text h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
+    .phone-text p {
+      font-size: 16px; line-height: 1.7; color: var(--text-sec);
+      margin-bottom: 32px;
+    }
+
+    /* ═══ STATS BAR ═══ */
+    .stats {
+      padding: 60px 40px;
+      background: var(--bg2);
+      border-top: 1px solid rgba(212,168,83,0.08);
+      border-bottom: 1px solid rgba(212,168,83,0.08);
+    }
+    .stats-grid {
+      max-width: 1000px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px;
+      text-align: center;
+    }
+    .stat-num {
+      font-family: var(--serif); font-size: clamp(36px, 5vw, 56px);
+      font-weight: 300; color: var(--gold);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--muted); margin-top: 8px;
+    }
+
+    /* ═══ CITIES ═══ */
+    .cities {
+      padding: 120px 40px;
+      max-width: 1200px; margin: 0 auto;
+    }
+    .section-tag {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 5px;
+      color: var(--gold); text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: var(--serif); font-size: clamp(32px, 5vw, 52px);
+      font-weight: 300; line-height: 1.15;
+      margin-bottom: 60px;
+    }
+    .section-title em { font-style: italic; color: var(--gold); font-weight: 400; }
+    .cities-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+    }
+    .city-card {
+      position: relative; border-radius: 16px; overflow: hidden;
+      height: 240px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s;
+    }
+    .city-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .city-card img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.16,1,0.3,1);
+    }
+    .city-card:hover img { transform: scale(1.08); }
+    .city-card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(6,6,12,0.85) 100%);
+      display: flex; align-items: flex-end; padding: 20px;
+    }
+    .city-card-name {
+      font-family: var(--serif); font-size: 22px; font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    /* ═══ FEATURES ═══ */
+    .features {
+      padding: 120px 40px;
+      background: var(--bg2);
+    }
+    .features-inner {
+      max-width: 1000px; margin: 0 auto;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+      margin-top: 60px;
+    }
+    .feature-card {
+      padding: 36px; border-radius: 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .feature-card:hover {
+      border-color: var(--gold-dim);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      font-size: 32px; margin-bottom: 20px;
+      display: block;
+    }
+    .feature-card h3 {
+      font-family: var(--serif); font-size: 20px; font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .feature-card p {
+      font-size: 14px; line-height: 1.7; color: var(--text-sec);
+    }
+
+    /* ═══ DOWNLOAD CTA ═══ */
+    .download {
+      padding: 140px 40px;
+      text-align: center;
+      position: relative;
+    }
+    .download-glow {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(212,168,83,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .download h2 {
+      font-family: var(--serif); font-size: clamp(36px, 6vw, 64px);
+      font-weight: 300; line-height: 1.1;
+      margin-bottom: 20px; position: relative;
+    }
+    .download h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
+    .download p {
+      font-size: 18px; color: var(--text-sec); line-height: 1.6;
+      max-width: 500px; margin: 0 auto 40px; position: relative;
+    }
+    .download-badges {
+      display: flex; gap: 16px; justify-content: center;
+      flex-wrap: wrap; position: relative;
+    }
+    .store-badge {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 14px 32px; border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: all 0.3s; cursor: pointer;
+      font-family: var(--sans);
+    }
+    .store-badge:hover {
+      background: rgba(212,168,83,0.1);
+      border-color: var(--gold-dim);
+      transform: translateY(-2px);
+    }
+    .store-badge-icon { font-size: 28px; }
+    .store-badge-text { text-align: left; }
+    .store-badge-text small { font-size: 10px; color: var(--muted); letter-spacing: 1px; display: block; }
+    .store-badge-text strong { font-size: 16px; font-weight: 600; }
+
+    /* ═══ FOOTER ═══ */
+    footer {
+      padding: 60px 40px 40px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+    }
+    .footer-brand {
+      font-family: var(--serif); font-size: 16px; color: var(--gold);
+      letter-spacing: 4px; margin-bottom: 12px;
+    }
+    .footer-links {
+      display: flex; gap: 24px; justify-content: center; margin-bottom: 20px;
+    }
+    .footer-links a {
+      font-size: 13px; color: var(--muted); letter-spacing: 1px;
+      transition: color 0.3s;
+    }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-copy {
+      font-size: 11px; color: rgba(255,255,255,0.25);
+      letter-spacing: 1px;
+    }
+
+    /* ═══ ANIMATIONS ═══ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ═══ RESPONSIVE ═══ */
+    @media (max-width: 900px) {
+      nav { padding: 16px 20px; }
+      .phone-section { flex-direction: column; padding: 80px 20px; gap: 48px; }
+      .phone-frame { width: 260px; min-width: 260px; height: 540px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+      .features-grid { grid-template-columns: 1fr; gap: 20px; }
+      .cities-grid { grid-template-columns: repeat(2, 1fr); }
+      .cities, .features, .download { padding: 80px 20px; }
+      .section-title { margin-bottom: 40px; }
+    }
+    @media (max-width: 500px) {
+      .cities-grid { grid-template-columns: 1fr; }
+      .hero-cta-row { flex-direction: column; }
+      .cta-primary, .cta-secondary { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PRELOADER -->
+  <div class="preloader" id="preloader">
+    <div class="preloader-logo"><span>GT</span></div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-brand">GOOD TIMES</div>
+    <button class="nav-cta" onclick="scrollToDownload()">Download App</button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grain"></div>
+    <div class="hero-content">
+      <div class="hero-tag">Your City Concierge</div>
+      <h1 class="hero-title">What's the<br/><em>Move?</em></h1>
+      <p class="hero-sub">800+ curated venues. 10 cities. Every event worth knowing about. Good Times is the only nightlife & culture app you need.</p>
+      <div class="hero-cta-row">
+        <button class="cta-primary" onclick="scrollToDownload()">Download Free</button>
+        <button class="cta-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">See Features</button>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- PHONE MOCKUP + TEXT -->
+  <section class="phone-section reveal">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="phone-header">
+          <h3>Good Times</h3>
+          <p>ATLANTA</p>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-img"></div>
+          <div class="phone-card-text">
+            <h4><span class="phone-dot" style="background:#FF6B6B"></span>NOIR</h4>
+            <p>Fri, Apr 4 · 10PM · Believe Music Hall</p>
+          </div>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-img"></div>
+          <div class="phone-card-text">
+            <h4><span class="phone-dot" style="background:#D4A853"></span>SECRET SOCIETY</h4>
+            <p>Sat, Apr 5 · 9PM · Members Only</p>
+          </div>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-img"></div>
+          <div class="phone-card-text">
+            <h4><span class="phone-dot" style="background:#00A651"></span>FOREVER FUTBOL</h4>
+            <p>May 29 – Jul 6 · Noon–9PM</p>
+          </div>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-img"></div>
+          <div class="phone-card-text">
+            <h4><span class="phone-dot" style="background:#FFB86B"></span>TASTE OF ART</h4>
+            <p>Coming Soon · Immersive Dining</p>
+          </div>
+        </div>
+        <div class="phone-nav-bar">
+          <div class="phone-nav-item active"><div class="phone-nav-icon"></div>NOW</div>
+          <div class="phone-nav-item"><div class="phone-nav-icon"></div>EXPLORE</div>
+          <div class="phone-nav-item"><div class="phone-nav-icon"></div>PLAN</div>
+          <div class="phone-nav-item"><div class="phone-nav-icon"></div>VAULT</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-text">
+      <h2>Your city.<br/><em>Curated.</em></h2>
+      <p>No more scrolling through Instagram trying to figure out what's happening tonight. Good Times aggregates the best events, venues, and experiences — filtered by your vibe, your city, your schedule.</p>
+      <button class="cta-primary" onclick="scrollToDownload()">Get the App</button>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats reveal">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-num">800+</div>
+        <div class="stat-label">Venues</div>
+      </div>
+      <div>
+        <div class="stat-num">10</div>
+        <div class="stat-label">Cities</div>
+      </div>
+      <div>
+        <div class="stat-num">15+</div>
+        <div class="stat-label">Event Brands</div>
+      </div>
+      <div>
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">Updated</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CITIES -->
+  <section class="cities reveal">
+    <div class="section-tag">Now Live</div>
+    <h2 class="section-title">Find your city's<br/><em>best kept secrets</em></h2>
+    <div class="cities-grid" id="cities-grid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features reveal" id="features">
+    <div class="features-inner">
+      <div class="section-tag">Why Good Times</div>
+      <h2 class="section-title">Not another<br/><em>events app</em></h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🎯</span>
+          <h3>Curated, Not Crowded</h3>
+          <p>Every venue is hand-picked. No random listings, no paid placements. Just the spots that actually matter.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌙</span>
+          <h3>Tonight vs. This Week</h3>
+          <p>Smart filtering shows you what's happening right now, tonight, or this week. Never miss the move again.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📍</span>
+          <h3>10 Cities Deep</h3>
+          <p>Atlanta, Houston, LA, DC, Charlotte, Miami, Vegas, and more. Every city has its own curated scene.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">⭐</span>
+          <h3>Save & Plan</h3>
+          <p>Build your perfect night. Save events, create plans with multiple stops, and share with your crew.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔔</span>
+          <h3>Push Alerts</h3>
+          <p>Get notified when new events drop in your city. First to know, first to go.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎪</span>
+          <h3>Exclusive Events</h3>
+          <p>Access to NOIR, Secret Society, HugLife, and 15+ premium event brands you won't find anywhere else.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section class="download reveal" id="download">
+    <div class="download-glow"></div>
+    <h2>Stop scrolling.<br/><em>Start living.</em></h2>
+    <p>Download Good Times and never ask "what's the move?" again.</p>
+    <div class="download-badges">
+      <a href="#" class="store-badge" id="app-store-badge">
+        <span class="store-badge-icon">🍎</span>
+        <div class="store-badge-text">
+          <small>Download on the</small>
+          <strong>App Store</strong>
+        </div>
+      </a>
+      <a href="#" class="store-badge" id="play-store-badge">
+        <span class="store-badge-icon">▶️</span>
+        <div class="store-badge-text">
+          <small>Get it on</small>
+          <strong>Google Play</strong>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">GOOD TIMES™</div>
+    <div class="footer-links">
+      <a href="/privacy">Privacy</a>
+      <a href="/support">Support</a>
+      <a href="https://instagram.com/goodtimesworldwide" target="_blank">Instagram</a>
+    </div>
+    <div class="footer-copy">© 2026 Good Times Worldwide. A KHG Production.</div>
+  </footer>
+
+  <script>
+    // Preloader
+    window.addEventListener('load', () => {
+      setTimeout(() => document.getElementById('preloader').classList.add('done'), 800);
+    });
+
+    // Nav scroll effect
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 60);
+    });
+
+    // Scroll reveals
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Scroll to download
+    function scrollToDownload() {
+      document.getElementById('download').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Cities
+    const cities = [
+      { name: 'Atlanta', img: 'https://images.unsplash.com/photo-1575917649111-0c4d45f0a1e2?w=500' },
+      { name: 'Houston', img: 'https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=500' },
+      { name: 'Los Angeles', img: 'https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=500' },
+      { name: 'Washington DC', img: 'https://images.unsplash.com/photo-1617581629397-a72507c3de9e?w=500' },
+      { name: 'Charlotte', img: 'https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=500' },
+      { name: 'Miami', img: 'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=500' },
+      { name: 'Las Vegas', img: 'https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=500' },
+    ];
+    const grid = document.getElementById('cities-grid');
+    cities.forEach(c => {
+      grid.innerHTML += `<div class="city-card" onclick="scrollToDownload()">
+        <img src="${c.img}" alt="${c.name}" loading="lazy"/>
+        <div class="city-card-overlay"><div class="city-card-name">${c.name}</div></div>
+      </div>`;
+    });
+  </script>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">{
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Good Times",
+    "description": "City concierge app for nightlife, events, dining & culture. 800+ curated venues across 10 cities.",
+    "url": "https://thegoodtimesworldwide.com",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "iOS, Android",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }</script>
+</body>
+</html>
