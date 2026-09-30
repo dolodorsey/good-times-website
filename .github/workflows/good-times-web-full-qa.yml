@@ -5,13 +5,13 @@ on:
     branches: [web-desktop-v1]
     paths:
       - '.github/workflows/good-times-web-full-qa.yml'
-      - 'scripts/web-full-qa.mjs'
-      - 'scripts/web-account-qa.mjs'
-      - 'scripts/prepare-web-qa.mjs'
-      - 'scripts/refine-web-qa.mjs'
-      - 'scripts/refine-web-auth.mjs'
-      - 'src/features/experience/web-navigation.js'
-      - 'src/features/experience/good-times-web-contract.css'
+      - 'src/**'
+      - 'api/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'package*.json'
+      - 'index.html'
+      - 'AGENTS.md'
 permissions:
   contents: write
 concurrency:
@@ -41,17 +41,18 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Restore assets and apply reviewed WEB-only fixes
+      - name: Apply reviewed WEB-only corrections
         run: |
           set -euo pipefail
           node scripts/prepare-web-qa.mjs
           node scripts/refine-web-qa.mjs
           node scripts/refine-web-auth.mjs
+          node scripts/finalize-web-qa.mjs
           git config user.name 'GOOD TIMES Web QA'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html src package.json public scripts qa/ISOLATION.json qa/reference
           if ! git diff --cached --quiet; then
-            git commit -m 'Repair full-width desktop layout and WEB account interactions'
+            git commit -m 'Complete WEB request interactions and comprehensive release checks'
             git push origin HEAD:web-desktop-v1
           fi
           echo "WEB_TEST_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
@@ -76,6 +77,23 @@ jobs:
         id: account
         continue-on-error: true
         run: node scripts/web-account-qa.mjs
+      - name: All public request forms and submission recovery
+        id: requests
+        continue-on-error: true
+        run: node scripts/web-request-qa.mjs
+      - name: Restaurant details, metadata retry and exact action links
+        id: restaurants
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          PORT=4195 API_ORIGIN=http://127.0.0.1:9 GT_UI_HEALTH_FIXTURE=healthy node scripts/serve-dist.mjs > /tmp/gt-restaurant-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for n in $(seq 1 30); do if curl -fsS http://127.0.0.1:4195/api/health > /dev/null; then break; fi; sleep 0.2; done
+          export GT_UI_BASE=http://127.0.0.1:4195
+          export GT_UI_ARTIFACTS=qa/evidence
+          export GT_UI_CHROME_PATH=$(node --input-type=module -e "import {chromium} from 'playwright-core';console.log(chromium.executablePath())")
+          node --test --test-name-pattern='rendered restaurant' scripts/restaurant-details.test.mjs 2>&1 | tee qa/evidence/restaurant-ui-tests.txt
       - name: Save screenshots and detailed test evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -84,17 +102,17 @@ jobs:
           path: qa/evidence
           if-no-files-found: warn
           retention-days: 14
-      - name: Prepare reproducible local WEB audit package without credentials
+      - name: Prepare reproducible WEB audit package without credentials
         if: always()
         run: |
           mkdir -p /tmp/good-times-web-audit
-          for item in src public api lib components scripts index.html package.json package-lock.json vite.config.js vercel.json dist node_modules; do
+          for item in src public api lib components scripts index.html package.json package-lock.json vite.config.js vercel.json dist node_modules AGENTS.md; do
             if test -e "$item"; then cp -a "$item" /tmp/good-times-web-audit/; fi
           done
           mkdir -p /tmp/good-times-web-audit/qa
           if test -d qa/reference; then cp -a qa/reference /tmp/good-times-web-audit/qa/; fi
           tar -czf /tmp/good-times-web-audit.tgz -C /tmp/good-times-web-audit .
-      - name: Export WEB-only reproducible audit package
+      - name: Export WEB-only audit package
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -107,14 +125,15 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REPOSITORY" = 'dolodorsey/good-times-website'
           test "$GITHUB_REF" = 'refs/heads/web-desktop-v1'
-          if test -f qa/evidence/REPORT.md; then cat qa/evidence/REPORT.md >> "$GITHUB_STEP_SUMMARY"; fi
-          if test -f qa/evidence/ACCOUNT_REPORT.md; then cat qa/evidence/ACCOUNT_REPORT.md >> "$GITHUB_STEP_SUMMARY"; fi
+          for file in qa/evidence/REPORT.md qa/evidence/ACCOUNT_REPORT.md qa/evidence/REQUEST_REPORT.md; do
+            if test -f "$file"; then cat "$file" >> "$GITHUB_STEP_SUMMARY"; fi
+          done
           if test -d qa/evidence; then
             git add qa/evidence
             if ! git diff --cached --quiet; then
               git config user.name 'GOOD TIMES Web QA'
               git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-              git commit -m 'Record desktop web and account verification evidence'
+              git commit -m 'Record comprehensive isolated WEB verification evidence'
               git push origin HEAD:web-desktop-v1
             fi
           fi
@@ -124,6 +143,8 @@ jobs:
           UNIT: ${{ steps.unit.outcome }}
           BROWSER: ${{ steps.browser.outcome }}
           ACCOUNT: ${{ steps.account.outcome }}
+          REQUESTS: ${{ steps.requests.outcome }}
+          RESTAURANTS: ${{ steps.restaurants.outcome }}
         run: |
-          test "$UNIT" = success && test "$BROWSER" = success && test "$ACCOUNT" = success
-          node -e "for(const f of ['report.json','account-report.json']){if(!JSON.parse(require('fs').readFileSync('qa/evidence/'+f)).passed)process.exit(1)}"
+          test "$UNIT" = success && test "$BROWSER" = success && test "$ACCOUNT" = success && test "$REQUESTS" = success && test "$RESTAURANTS" = success
+          node -e "const fs=require('fs');for(const f of ['report.json','account-report.json','request-report.json'])if(!JSON.parse(fs.readFileSync('qa/evidence/'+f)).passed)process.exit(1);for(const w of [320,390,834,1440]){const r=JSON.parse(fs.readFileSync('qa/evidence/restaurant-details/'+w+'/receipt.json'));if(r.errors.length||!r.retry||!r.order_action||!r.reservation_action)process.exit(1)}"
