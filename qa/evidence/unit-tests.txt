@@ -1,0 +1,229 @@
+
+> good-times-web@1.0.0 test
+> node --test scripts/*.test.mjs
+
+✔ sports supports five configured Atlanta team leagues (2.913593ms)
+✔ sports rejects unknown leagues, malformed and excessive dates (0.852526ms)
+✔ unrelated cities cannot enter Atlanta team following (0.736138ms)
+✔ away fixtures remain explicitly away (1.354445ms)
+✔ zero is a real live score and is retained (0.455052ms)
+✔ scheduled default zeros are not live scores (0.54984ms)
+✔ unknown dates or provider shape never become fabricated fixtures (0.278241ms)
+✔ failed league is disclosed, not mislabeled as no games (38.95774ms)
+✔ sports uses only the registered fixed provider host and bounded dates (3.134486ms)
+✔ publishable key is never treated as a user bearer JWT (0.815216ms)
+✔ unsafe action URL rejected: javascript:alert(1) (2.899238ms)
+✔ unsafe action URL rejected: data:text/html,bad (0.204222ms)
+✔ unsafe action URL rejected: //evil.test/path (0.215454ms)
+✔ unsafe action URL rejected: https://user:pw@example.test (0.122219ms)
+✔ unsafe action URL rejected: file:///tmp/pass (0.166892ms)
+✔ unsafe action URL rejected: not a url (0.15504ms)
+✔ nonrepresentational/unsafe photo rejected: https://images.unsplash.com/x (0.366176ms)
+✔ nonrepresentational/unsafe photo rejected: https://maps.googleapis.com/photo?id=1 (0.223349ms)
+✔ nonrepresentational/unsafe photo rejected: https://example.test/x?key=secret (0.210213ms)
+✔ truthful local venue photo survives (0.37926ms)
+✔ unknown time never receives a invented clock: null (0.318286ms)
+✔ unknown time never receives a invented clock: TBA (0.129011ms)
+✔ unknown time never receives a invented clock: 25:00 (0.154519ms)
+✔ unknown time never receives a invented clock: 09:99 (0.067587ms)
+✔ unknown time never receives a invented clock: 21:00 Z (0.059732ms)
+✔ unknown time never receives a invented clock: three (0.064621ms)
+✔ midnight, noon and local calendar format correctly (18.76561ms)
+✔ browse scope rejects unsupported input city=miami (1.11698ms)
+✔ browse scope rejects unsupported input category=x),or(id.gt.0 (0.270656ms)
+✔ browse scope rejects unsupported input subcategory=nightclubs (0.293519ms)
+✔ browse scope rejects unsupported input kind=secrets (0.235962ms)
+✔ browse scope rejects unsupported input from=2026-02-31 (0.317064ms)
+✔ browse scope rejects unsupported input from=2026-10-01&to=2026-09-01 (0.278251ms)
+✔ browse scope rejects unsupported input from=2026-01-01&to=2028-01-01 (0.231934ms)
+✔ browse has bounded validated limits (0.429794ms)
+✔ text query remains inside quoted PostgREST value (0.76402ms)
+✔ page cursor cannot cross filter scope (0.697816ms)
+✔ event fails eligibility: {"city_key":"miami"} (2.11606ms)
+✔ event fails eligibility: {"venue_name":null} (0.607217ms)
+✔ event fails eligibility: {"event_name":null} (0.17676ms)
+✔ event fails eligibility: {"status":"cancelled"} (0.189605ms)
+✔ event fails eligibility: {"is_sold_out":true} (0.158356ms)
+✔ event fails eligibility: {"category_key_v2":"needs_review"} (0.158987ms)
+✔ event fails eligibility: {"updated_at":"2026-01-01T00:00:00Z"} (0.16557ms)
+✔ event fails eligibility: {"ticket_url":"javascript:alert(1)","source_url":null} (0.18191ms)
+✔ canonical event mapping keeps identity and exact action (1.332444ms)
+✔ Dream playoffs cannot inherit a concert category (0.621624ms)
+✔ read rejects upstream failure without turning it into zero items (43.076788ms)
+✔ real page shape uses raw cursor and safe bounded reads (3.458904ms)
+✔ no fake whole-corpus count is returned (1.058491ms)
+✔ matching occurrences deduplicate but different performances remain (4.778643ms)
+✔ started event without a known end is not called currently actionable (0.226745ms)
+✔ stored plan text is not provider proof: CONFIRMED (0.177072ms)
+✔ stored plan text is not provider proof: TICKETED (0.09623ms)
+✔ stored plan text is not provider proof: REQUESTED (0.125695ms)
+✔ stored plan text is not provider proof: HELD (0.086321ms)
+✔ stored plan text is not provider proof: WAITLIST (0.128941ms)
+✔ invalid planning input rejected {"date":"2026-09-26"} (0.436837ms)
+✔ invalid planning input rejected {"date":"2026-02-31"} (0.156914ms)
+✔ invalid planning input rejected {"start":"99:00"} (0.169707ms)
+✔ invalid planning input rejected {"start":"19:00","end":"19:00"} (0.163667ms)
+✔ invalid planning input rejected {"start":"01:00","end":"23:00"} (0.156673ms)
+✔ invalid planning input rejected {"people":0} (0.19803ms)
+✔ invalid planning input rejected {"people":21} (0.166552ms)
+✔ invalid planning input rejected {"people":1.4} (0.173755ms)
+✔ invalid planning input rejected {"anchorId":"https://not-an-id"} (0.307185ms)
+✔ constraint normalization respects false instead of coercing strings (0.260037ms)
+✔ past start time today rejected (0.45905ms)
+✔ known closing hours exclude an impossible stop (0.745956ms)
+✔ unknown hours excluded unless user explicitly allows them (0.22953ms)
+✔ known closed day remains excluded even when unknown hours allowed (0.295564ms)
+✔ hard area preference is not silently relaxed (0.867674ms)
+✔ price band excludes unknown price instead of claiming it fits (0.270286ms)
+✔ age-restricted venues excluded without all-adult confirmation (0.262171ms)
+✔ planner builds current suggestions without writing reservations (2.853871ms)
+✔ planner does not silently create a plan for no eligible inventory (0.615182ms)
+✔ missing anchor returns an actionable conflict (0.393476ms)
+✔ anchor outside the time window returns conflict (0.617506ms)
+✔ unknown event end never gets an invented later stop (0.63029ms)
+✔ lock prevents destructive stop editing (0.371205ms)
+✔ reorder and remove leave original plan immutable (0.157684ms)
+✔ published event start cannot be overwritten as an arrival preference (0.175839ms)
+✔ calendar keeps local dates and warns it is not a reservation (0.602448ms)
+✔ unknown plan times do not become calendar midnight events (0.233116ms)
+✔ itinerary warnings flag decreasing times (0.245069ms)
+✔ plan generation verifies account before any inventory read (0.413043ms)
+✔ bad account token cannot access planning inventory (0.613378ms)
+✔ plan writes use the signed-in identity and existing table only (1.094999ms)
+✔ a failed plan write throws and does not report saved (0.536785ms)
+✔ conflicting edit is not allowed to overwrite current saved state (0.577391ms)
+✔ client never accepts another user’s plan response (0.498523ms)
+✔ saved hydration is bounded and tolerates unsupported legacy identities (0.498133ms)
+✔ complete mode remains inside the canonical root with Places Entertainment and Profile library (0.638745ms)
+✖ owner-approved navigation is protected in product rules and agent instructions (0.383537ms)
+✔ complete styles have normal phone two-column layouts and accessible reflow (0.16051ms)
+✖ density audit migrations stay on V2 facets, least privilege and paused execution (0.195896ms)
+✔ new APIs never use privileged credentials, bookings or ingestion (0.234719ms)
+✔ formats local dates without UTC rollover (1.328706ms)
+✔ accepts a valid membership request without SMS consent (0.465201ms)
+✔ rejects past concierge dates (0.428853ms)
+✔ rejects reversed trip ranges (0.280345ms)
+✔ rejects non-integer and oversized group sizes (2.106403ms)
+✔ accepts a valid group request (0.198772ms)
+✔ documented showtime takes precedence and doors remain a separate fact (1.698879ms)
+✔ doors-only listing explicitly states showtime is unknown (24.409493ms)
+✔ missing and invalid times do not acquire an invented default (1.062649ms)
+✔ midnight and noon labels are unambiguous (0.250569ms)
+✔ stores and reads a complete current session (2.297751ms)
+✔ rejects expired and incomplete sessions (1.881732ms)
+✔ clears a stored session (0.243505ms)
+✔ normalizes common authentication errors (0.538267ms)
+✔ parses only valid JSON object sessions (1.698047ms)
+✔ refresh decision respects expiry safety window (0.235741ms)
+✔ refreshes an expired session and stores rotated tokens (1.426109ms)
+✔ removes an invalid local session (0.233428ms)
+✔ removes the session only for an invalid refresh token (0.310922ms)
+✔ preserves the old session during a transient refresh failure (0.274573ms)
+✔ parses a valid recovery callback (0.397534ms)
+✔ restaurant attributes require the exact entity: null (278.087513ms)
+✔ restaurant attributes require the exact entity: [] (0.379139ms)
+✔ restaurant attributes require the exact entity: {} (0.136646ms)
+✔ restaurant attributes require the exact entity: {"entity_id":"679e93b9-2972-4daa-91b2-8775ab3db89e","service_level":"fast_casual","cuisine_tags":["tapas"],"meal_tags":["breakfast","lunch","dinner"],"occasion_tags":["group_dining"],"ownership_tags":["woman_owned"],"needs_review":true} (0.118682ms)
+✔ restaurant output is allowlisted, bounded and never includes internal evidence (1.254578ms)
+✔ empty and malformed attributes collapse without invented defaults (0.326742ms)
+✔ restaurant facts preserve the recorded service, cuisine, meal and ownership meaning (0.282249ms)
+✔ restaurant action label uses exact evidence 0 (0.289182ms)
+✔ restaurant action label uses exact evidence 1 (0.122369ms)
+✔ restaurant action label uses exact evidence 2 (0.286857ms)
+✔ restaurant action label uses exact evidence 3 (0.162554ms)
+✔ restaurant action label uses exact evidence 4 (0.198451ms)
+✔ restaurant action label uses exact evidence 5 (0.11241ms)
+✔ restaurant action label uses exact evidence 6 (0.095739ms)
+✔ restaurant action label uses exact evidence 7 (0.110567ms)
+✔ restaurant action label uses exact evidence 8 (0.070131ms)
+✔ restaurant action label uses exact evidence 9 (0.065272ms)
+✔ restaurant action label uses exact evidence 10 (0.061425ms)
+✔ restaurant action label uses exact evidence 11 (0.06405ms)
+✔ restaurant action label uses exact evidence 12 (0.059752ms)
+✔ restaurant action label uses exact evidence 13 (0.082655ms)
+✔ restaurant action label uses exact evidence 14 (0.106309ms)
+✔ venue-hosted ordering requires the same venue and a recorded ordering feature (0.151864ms)
+✔ venue hydration is exact-ID, read-only, bounded and additive (17.935767ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"id":"07c94591-54b5-4094-8e3d-206db04782ef"} (0.72109ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"city_key":"miami"} (0.482302ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"status":"closed"} (0.568975ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"is_verified":false} (0.480269ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"verification_status":"needs_review"} (0.533158ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"freshness_expires_at":"2020-01-01"} (0.462235ms)
+✔ ineligible venue cannot be rescued by restaurant metadata {"freshness_expires_at":null} (0.528749ms)
+✔ a missing venue never triggers a profile fetch (0.698848ms)
+✔ wrong-entity metadata is discarded without discarding the venue (0.725638ms)
+✔ optional enrichment failure leaves base detail and transaction links usable (0.608639ms)
+✔ base venue failure remains an error rather than a false empty result (0.592649ms)
+✖ restaurant detail migration protects public writes and requires current Atlanta venue visibility (0.288741ms)
+﹣ rendered restaurant facts / retry / return at 320 (0.131055ms) # SKIP
+﹣ rendered restaurant facts / retry / return at 390 (0.073338ms) # SKIP
+﹣ rendered restaurant facts / retry / return at 834 (0.083265ms) # SKIP
+﹣ rendered restaurant facts / retry / return at 1440 (0.059471ms) # SKIP
+✔ restaurant intent routes to Places (1.558807ms)
+✔ nightlife timing routes to Entertainment (0.380852ms)
+✔ sports intent routes to Entertainment sports (0.362408ms)
+✔ combined outing routes to both systems (0.231042ms)
+✔ concert intent routes to Entertainment live inventory (0.337332ms)
+✔ ambiguous discovery searches keep both systems available (0.269955ms)
+ℹ tests 164
+ℹ suites 0
+ℹ pass 157
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 4
+ℹ todo 0
+ℹ duration_ms 739.442454
+
+✖ failing tests:
+
+test at scripts/complete-upgrade.test.mjs:62:1
+✖ owner-approved navigation is protected in product rules and agent instructions (0.383537ms)
+  Error: ENOENT: no such file or directory, open 'docs/GOOD_TIMES_PRODUCT_UI_CONSTITUTION.md'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///home/runner/work/good-times-website/good-times-website/scripts/complete-upgrade.test.mjs:62:114)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'docs/GOOD_TIMES_PRODUCT_UI_CONSTITUTION.md'
+  }
+
+test at scripts/complete-upgrade.test.mjs:64:1
+✖ density audit migrations stay on V2 facets, least privilege and paused execution (0.195896ms)
+  Error: ENOENT: no such file or directory, open 'supabase/migrations/20260928083620_align_good_times_coverage_to_v2_facets.sql'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///home/runner/work/good-times-website/good-times-website/scripts/complete-upgrade.test.mjs:64:112)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'supabase/migrations/20260928083620_align_good_times_coverage_to_v2_facets.sql'
+  }
+
+test at scripts/restaurant-details.test.mjs:74:1
+✖ restaurant detail migration protects public writes and requires current Atlanta venue visibility (0.288741ms)
+  Error: ENOENT: no such file or directory, open 'supabase/migrations/20260928091745_good_times_restaurant_detail_rls_v1.sql'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///home/runner/work/good-times-website/good-times-website/scripts/restaurant-details.test.mjs:75:15)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'supabase/migrations/20260928091745_good_times_restaurant_detail_rls_v1.sql'
+  }
