@@ -114,3 +114,6 @@ html body#good-times-web.gt-web-mode #root .gt-premium-experience>:where(.gt-web
  html body#good-times-web.gt-web-mode #root :where(.gt-web-auth-auth,.gt-web-auth-forgot)>div:last-child>div{max-width:440px!important}
  html body#good-times-web.gt-web-mode #root .gt-web-auth-page input{min-height:48px!important;font-size:16px!important}
 }
+
+/* WEB RECOVERY PAGE GEOMETRY: all direct public main elements, including password recovery, use the browser canvas. */
+html body#good-times-web.gt-web-mode #root .gt-premium-experience>main{max-width:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important}

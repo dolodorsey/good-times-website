@@ -129,7 +129,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
   if (screen === 'welcome') return <div className={`gt-web-auth-page gt-web-auth-${screen}`} style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexDirection: 'column', padding: '40px 24px 64px', textAlign: 'center' }}>
     <Background video />
     <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 360 }}>
-      <img src={CURRENT_LOGO} alt="Good Times" style={{ height: 58, objectFit: 'contain', marginBottom: 18 }} />
+      <img data-web-official-logo="true" src={CURRENT_LOGO} onError={event=>{const img=event.currentTarget;if(!img.dataset.fallback){img.dataset.fallback='official';img.src='/good-times-logo-official.png'}else{img.style.visibility='hidden'}}} alt="Good Times" style={{ height: 58, objectFit: 'contain', marginBottom: 18 }} />
       <h1 style={{ fontFamily: SERIF, fontSize: 46, fontWeight: 300, letterSpacing: '.14em', textTransform: 'uppercase', margin: '0 0 10px' }}>Good Times</h1>
       <p style={{ color: 'rgba(255,255,255,.58)', lineHeight: 1.6, margin: '0 0 34px' }}>Your city. Your vibe. Your night.<br />A free account keeps your saves, plans and recommendations with you.</p>
       <button style={primary()} onClick={() => { setMode('signup'); setScreen('auth') }}>Get Started</button>
