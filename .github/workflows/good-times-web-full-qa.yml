@@ -1,0 +1,153 @@
+name: GOOD TIMES Web Full QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [web-desktop-v1]
+    paths:
+      - '.github/workflows/good-times-web-full-qa.yml'
+      - 'scripts/web-full-qa.mjs'
+      - 'src/features/experience/web-navigation.js'
+      - 'src/features/experience/good-times-web-contract.css'
+permissions:
+  contents: write
+concurrency:
+  group: good-times-web-full-qa
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'dolodorsey/good-times-website' && github.ref == 'refs/heads/web-desktop-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout isolated WEB branch only
+        uses: actions/checkout@v4
+        with:
+          ref: web-desktop-v1
+          fetch-depth: 1
+      - name: Read pinned app snapshot without source credentials
+        uses: actions/checkout@v4
+        with:
+          repository: dolodorsey/good-times-app
+          ref: 0e2c1fe81c695cb1ecc2f4ca7220d51203b9e10f
+          path: .web-reference-source
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Restore only public binary assets and isolated test support; apply reviewed web changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'dolodorsey/good-times-website'
+          test "$GITHUB_REF" = 'refs/heads/web-desktop-v1'
+          python3 - <<'PY'
+          import pathlib, shutil, json, hashlib
+          root=pathlib.Path.cwd(); source=root/'.web-reference-source'
+          copied=[]
+          for p in (source/'public').rglob('*'):
+            if not p.is_file() or p.suffix.lower() not in {'.png','.jpg','.jpeg','.webp','.svg','.gif','.ico','.avif'}: continue
+            relative=p.relative_to(source); target=root/relative
+            if not target.exists():
+              target.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,target); copied.append(str(relative))
+          tests=['serve-dist.mjs','complete-upgrade-fixtures.mjs','complete-upgrade.test.mjs','complete-sports.test.mjs','gt-auth-client.test.mjs','gt-auth-session.test.mjs','direct-request-validation.test.mjs','search-intent.test.mjs','event-time-display.test.mjs','live-taxonomy.test.mjs','restaurant-details.test.mjs']
+          for name in tests:
+            p=source/'scripts'/name
+            if not p.exists(): raise RuntimeError('Missing reference test '+name)
+            dst=root/'scripts'/name
+            if not dst.exists(): shutil.copy2(p,dst)
+          main=root/'src/main.jsx'; text=main.read_text()
+          marker="import './features/experience/good-times-web-contract.css'"
+          if marker not in text:
+            anchor="import './features/experience/good-times-desktop-web.css'"
+            assert text.count(anchor)==1
+            text=text.replace(anchor,anchor+'\n'+marker)
+          if "document.body.classList.add('gt-web-mode')" not in text:
+            anchor="const pathname = window.location.pathname"
+            assert text.count(anchor)==1
+            text=text.replace(anchor,"document.body.classList.add('gt-web-mode')\n\n"+anchor)
+          main.write_text(text)
+          app=root/'src/features/experience/GoodTimesCommandAppV4.jsx'; text=app.read_text()
+          if 'readWebRoute' not in text:
+            text="import {readWebRoute,writeWebRoute} from './web-navigation.js'\nimport './good-times-web-contract.css'\n"+text
+            old="[tab,setTab]=useState('home')"; assert text.count(old)==1
+            text=text.replace(old,"[tab,setTab]=useState(()=>readWebRoute().tab)")
+            old='const goTab=id=>{'; assert text.count(old)==1
+            text=text.replace(old,'const goTab=id=>{writeWebRoute(id);')
+            old='onClick={()=>goTab(id)}><span>'; assert text.count(old)==1
+            text=text.replace(old,'aria-current={tab===id?\'page\':undefined} onClick={()=>goTab(id)}><span>')
+            anchor="  const returnTab=useRef('home')"; assert text.count(anchor)==1
+            hook="""
+            // Browser navigation belongs to the separate WEB client only.
+            useEffect(()=>{
+              const restore=()=>{const route=readWebRoute();setTab(route.tab);setCollection(null);setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setMapMode(false);setQuery('');setGlobalQuery('');setSelectedEvent(null);setSelectedVenue(null);setSelectedPlan(null);setPreferencesOpen(false);setWeeklyOpen(false)};
+              window.addEventListener('popstate',restore);
+              return()=>window.removeEventListener('popstate',restore);
+            },[])
+            """
+            text=text.replace(anchor,anchor+'\n'+hook)
+          app.write_text(text)
+          pkgfile=root/'package.json'; pkg=json.loads(pkgfile.read_text()); pkg['scripts']['test']='node --test scripts/*.test.mjs'; pkg['scripts']['test:web']='node scripts/web-full-qa.mjs'; pkg['scripts']['verify']='npm run test && npm run build && npm run test:web'; pkgfile.write_text(json.dumps(pkg,indent=2)+'\n')
+          native=root/'src/native.js'; text=native.read_text()
+          text=text.replace("  window.open(url,'_blank','noopener,noreferrer');", "  let destination;\n  try { destination=new URL(url,window.location.origin); if(!['http:','https:'].includes(destination.protocol))return false; } catch { return false; }\n  window.open(destination.href,'_blank','noopener,noreferrer');")
+          native.write_text(text)
+          out=root/'qa'; out.mkdir(exist_ok=True)
+          (out/'ISOLATION.json').write_text(json.dumps({'repository':'dolodorsey/good-times-website','branch':'web-desktop-v1','sourceRepositoryReadOnly':'dolodorsey/good-times-app','sourceCommit':'0e2c1fe81c695cb1ecc2f4ca7220d51203b9e10f','restoredAssets':copied,'assetCount':len(copied),'copiedTests':tests,'productionDatabaseWrites':False,'productionDomainChanged':False},indent=2)+'\n')
+          print(json.dumps({'restored_assets':len(copied),'paths':copied,'web_source_patched':True}))
+          PY
+          git config user.name 'GOOD TIMES Web QA'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main.jsx src/native.js src/features/experience/GoodTimesCommandAppV4.jsx package.json public scripts qa/ISOLATION.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Complete isolated web assets, browser navigation and full-screen contract'
+            git push origin HEAD:web-desktop-v1
+          fi
+          echo "WEB_TEST_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Behavioral unit tests
+        id: unit
+        continue-on-error: true
+        run: |
+          mkdir -p qa/evidence
+          set -o pipefail
+          npm run test 2>&1 | tee qa/evidence/unit-tests.txt
+      - name: Compile full WEB UI
+        run: npm run build
+      - name: Install matching Chromium
+        run: npx --no-install playwright-core install --with-deps chromium
+      - name: Full-screen browser interaction and failure-state QA
+        id: browser
+        continue-on-error: true
+        run: npm run test:web
+      - name: Save screenshots and detailed test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-web-full-qa-${{ github.run_id }}
+          path: qa/evidence
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Record QA evidence on WEB branch, never the app
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'dolodorsey/good-times-website'
+          test "$GITHUB_REF" = 'refs/heads/web-desktop-v1'
+          if test -f qa/evidence/REPORT.md; then cat qa/evidence/REPORT.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if test -d qa/evidence; then
+            git add qa/evidence
+            if ! git diff --cached --quiet; then
+              git commit -m 'Record full desktop web browser verification evidence'
+              git push origin HEAD:web-desktop-v1
+            fi
+          fi
+      - name: Enforce verification gate
+        if: always()
+        env:
+          UNIT: ${{ steps.unit.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+        run: test "$UNIT" = success && test "$BROWSER" = success
