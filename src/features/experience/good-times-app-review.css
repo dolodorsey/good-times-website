@@ -1,0 +1,205 @@
+/* GOOD TIMES — App Review viewport contract.
+   Keep the active consumer shell usable on iPad without weakening the contained
+   phone/desktop app-shell contract outside Apple tablet-sized viewports. */
+
+/* Legacy V2 guest restrictions remain here for /legacy only. */
+.gt-premium-experience .gt-guest-mode .gt2-nav{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+.gt-premium-experience .gt-guest-mode .gt2-nav button[data-gt-tab='concierge'],
+.gt-premium-experience .gt-guest-mode .gt2-nav button[data-gt-tab='plans'],
+.gt-premium-experience .gt-guest-mode .gt2-nav button[data-gt-tab='vault'],
+.gt-premium-experience .gt-guest-mode .gt2-save,
+.gt-premium-experience .gt-guest-mode .gt2-command-launch,
+.gt-premium-experience .gt-guest-mode .gt2-detail-actions button,
+.gt-premium-experience .gt-guest-mode .gt2-hero-copy>div>button:last-child{
+  display:none!important;
+}
+.gt-guest-back{z-index:9700!important}
+
+/* The live V3 app owns its scroll region. Every wrapper between #root and V3
+   must have a resolved height; otherwise guest mode expands to document height
+   and the absolute bottom navigation falls thousands of pixels below viewport. */
+html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode>.gt4-app,
+html body.gt-app-mode #root .gt-premium-experience>.gt4-app{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+/* iPad portrait: use the tablet canvas rather than the 460px phone frame. */
+@media (min-width:600px) and (max-width:899px){
+  html body.gt-app-mode #root{
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    transform:none!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border-radius:0!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience .gt-guest-mode .gt4-app,
+  html body.gt-app-mode #root .gt-premium-experience>.gt4-app,
+  html body.gt-app-mode #root .gt-premium-experience .gt4-loading{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience .gt4-nav{
+    width:100%!important;
+    max-width:none!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    transform:none!important;
+  }
+
+  /* Preserve the legacy tablet contract for /legacy. */
+  html body #root .gt-premium-experience>.gt-guest-mode,
+  html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
+  html body #root .gt-premium-experience>.gt2-app,
+  html body #root .gt-premium-experience .gt2-loading{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-shadow:none!important;
+  }
+  html body #root .gt-premium-experience .gt2-nav{
+    width:100%!important;
+    max-width:none!important;
+    left:0!important;
+    right:0!important;
+    transform:none!important;
+  }
+  .gt-premium-experience .gt2-event-grid,
+  .gt-premium-experience .gt2-venue-grid,
+  .gt-premium-experience .gt2-category-grid,
+  .gt-premium-experience .gt2-subcategory-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .gt-premium-experience .gt2-hero-copy{
+    width:min(650px,74vw)!important;
+    right:auto!important;
+  }
+}
+
+/* iPad landscape / 12.9-inch logical widths: keep a deliberate 20px frame,
+   but give the app the rest of the device instead of translating a phone shell. */
+@media (min-width:900px) and (max-width:1366px){
+  html body.gt-app-mode #root{
+    width:calc(100vw - 40px)!important;
+    max-width:1326px!important;
+    height:calc(100dvh - 40px)!important;
+    min-height:0!important;
+    margin:0 auto!important;
+    border-radius:27px!important;
+    overflow:hidden!important;
+    transform:none!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border-radius:27px!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:27px!important;
+    box-shadow:none!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience .gt-guest-mode .gt4-app,
+  html body.gt-app-mode #root .gt-premium-experience>.gt4-app{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    border-radius:27px!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience .gt4-nav{
+    width:100%!important;
+    max-width:none!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    transform:none!important;
+  }
+
+  /* Preserve the legacy tablet/desktop framing contract for /legacy. */
+  html body #root{transform:none!important;overflow:visible!important}
+  html body #root .gt-premium-experience>.gt-guest-mode{
+    width:min(1440px,calc(100vw - 40px))!important;
+    max-width:1440px!important;
+    margin:0 auto!important;
+    box-shadow:none!important;
+  }
+  html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
+  html body #root .gt-premium-experience>.gt2-app{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  html body #root .gt-premium-experience .gt2-nav{
+    width:min(1360px,calc(100vw - 80px))!important;
+    max-width:1360px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    bottom:20px!important;
+  }
+  .gt-premium-experience .gt-guest-mode .gt-rich-visuals{
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+  }
+}
+
+/* Explore remains a discovery surface in legacy guest mode. */
+.gt-premium-experience.gt-premium-experience:has(.gt2-nav.gt2-nav button[data-gt-tab='explore'].active)>.gt-party-pulse.gt-party-pulse{
+  display:block!important;
+}

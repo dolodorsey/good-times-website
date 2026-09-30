@@ -1,0 +1,417 @@
+import {COMPLETE_UPGRADE} from './complete/flag.js'
+import {Home as CompleteHome,EventCollection,Sports as CompleteSports} from './complete/Collections.jsx'
+import CompletePlanner,{Itinerary as CompleteItinerary} from './complete/Planner.jsx'
+import CompleteDetails from './complete/Details.jsx'
+import EntertainmentHub,{InteractiveCollection} from './complete/EntertainmentHub.jsx'
+import RestaurantExplorer from './complete/RestaurantExplorer.jsx'
+import GlobalSearch from './complete/GlobalSearch.jsx'
+import ProfileHub from './complete/ProfileHub.jsx'
+import {ExperienceCard as CompleteCard} from './complete/Cards.jsx'
+import {correctDisplayEvents} from './complete/taxonomy.js'
+import { COMPACT_PILOT } from './compact-pilot-flag.js'
+import CompactVenueCard from './CompactVenueCard.jsx'
+import React,{useCallback,useEffect,useMemo,useRef,useState}from'react'
+import{clearSession,readSession,updatePreferences}from'../auth/client.js'
+import{refreshStoredSession}from'../../gt-auth-session.js'
+import{askGoodTimesConcierge,cityLabel,cityOptions,loadCanonicalEvents,loadCanonicalVenues,loadExploreTaxonomy,loadGoodTimesProfile,loadItineraries,loadSavedItems,loadUserIntelligenceProfile,recordProductEvent,recordTasteSignal,saveItem,todayISO,unsaveItem}from'../intelligence/client.js'
+import ShakeRestaurantPanel from'./ShakeRestaurantPanel.jsx'
+import BuildMyNightPanel from'./BuildMyNightPanel.jsx'
+import ExploreTaxonomyBrowser from'./ExploreTaxonomyBrowser.jsx'
+import{loadGoodTimesAd,trackGoodTimesAd}from'./good-times-ads.js'
+import{DEFAULT_ALERT_PREFS,enqueueRadarAlert,followEntity,loadRadarState,saveRadarPreferences,unfollowEntity}from'./good-times-radar.js'
+import{hardenDisplayInventory,hardenRecommendationResult}from'./good-times-media-uniqueness.js'
+import{screenEditorialMedia,categoryEditorialMedia}from'./good-times-editorial-media.js'
+import GoodTimesIcon from'./GoodTimesIcon.jsx'
+import{eventIsDiscoverable,eventIsTonight,eventIsThisWeekend,eventDaysAway,eventStatus}from'./good-times-event-clock.js'
+import{shareContent}from'../../native.js'
+import{homeHighlights,withReviewedVenueMedia}from'./good-times-reviewed-media.js'
+import{VIBE_OPTIONS}from'../onboarding/options.js'
+import'./good-times-this-week.css'
+
+const NAV=[['home','⌂','Home'],['places','⌕','Places'],['plan','＋','Plan'],['entertainment','◇','Entertainment'],['profile','◎','Profile']]
+const PRIMARY_TABS=new Set(NAV.map(([id])=>id))
+const INTENTS=['Tonight','This Weekend','Date Night','Black-Owned','Live Music','Brunch','Free','Family','Late Night']
+const PLAN_INTENTS=[['date','♡','Date night'],['turnup','◇','Turn up'],['friends','◎','Dinner with friends'],['music','♫','Live music'],['different','✦','Something different'],['open','⌖',"I'm open"]]
+const CATEGORY_LANES=[
+  ['Eat Well','GOOD FOOD · GREATER COMPANY','Dining & Culinary','dining'],
+  ['Turn Up','LATE NIGHTS · LAST LONGER','Nightlife','nightlife'],
+  ['Be There','MORE THAN EVENTS · REAL MOMENTS','Concerts & Live Music','live music'],
+  ['Stay Right','REST WELL · RISE HIGHER','Hotels & Staycations','hotel'],
+  ['Do More','EXPLORE MORE · LIVE FULLER','Attractions & Experiences','experience'],
+]
+const CATEGORY_LABELS={concerts_live_music:'Concerts & Live Music',nightlife:'Nightlife',entertainment:'Entertainment',comedy_performing_arts:'Comedy & Performing Arts',festivals_major_activations:'Festivals & Major Activations',dining_culinary:'Dining & Culinary',sports_watch:'Sports & Watch',community_civic:'Community & Civic',day_parties_brunch:'Day Parties & Brunch',dating_social:'Dating & Social',wellness_fitness:'Wellness & Fitness',arts_museums_culture:'Arts & Culture',family_kids:'Family & Kids',college_alumni:'College & Alumni',vip_exclusive:'VIP & Exclusive',free_things_to_do:'Free Things To Do'}
+const GENERIC_MEDIA=/images\.unsplash\.com|\/good-times-backgrounds\/(?:gt-cat-|event-)/i
+const HOME_EXCLUDED_PLACE_TYPES=/housing|hotel|lodging|staycation|travel/
+const GT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
+const GT_HOME_FALLBACK=`${GT_MEDIA_BASE}/motion/goodtimes.jpg`
+
+const normalize=value=>String(value||'').toLowerCase().trim()
+function fmtDate(value){if(!value)return'Date TBA';return new Date(`${value}T12:00:00`).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}
+function fmtLongDate(value){if(!value)return'Date flexible';return new Date(`${value}T12:00:00`).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'})}
+function fmtTime(value){if(!value||value==='TBA')return'Time TBA';const m=String(value).match(/^(\d{1,2}):(\d{2})/);if(!m)return value;const h=Number(m[1]);return`${h%12||12}:${m[2]} ${h>=12?'PM':'AM'}`}
+function daysAway(value,city,now=Date.now()){return eventDaysAway(value,city,now)}
+function cat(value){return CATEGORY_LABELS[value]||String(value||'Experience').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())}
+function score(item){return Number(item?.recommendation_score??item?.good_times_score??item?.quality_score??item?.culture_score??0)||0}
+function numericAffinity(value){if(typeof value==='number')return value;if(value&&typeof value==='object')return Number(value.score??value.value??value.weight??0)||0;return Number(value)||0}
+function affinityFor(bucket,key){if(!bucket||!key||typeof bucket!=='object')return 0;const target=normalize(key);for(const[k,v]of Object.entries(bucket)){if(normalize(k)===target)return numericAffinity(v)}return 0}
+const VIBE_CATEGORY_HINTS={nightlife:['nightlife','day_parties_brunch'],hookah:['nightlife'],dining:['dining_culinary'],drinks:['nightlife','dining_culinary'],music:['concerts_live_music'],sports:['sports_watch'],culture:['arts_museums_culture','community_civic','festivals_major_activations'],dating:['dating_social','dining_culinary'],wellness:['wellness_fitness'],adventure:['entertainment','attractions_experiences'],exclusive:['vip_exclusive']}
+function personalizedScore(item,profile,intelligence){
+  let total=score(item)
+  const priority=Number(item?.display_priority)
+  if(Number.isFinite(priority)&&priority>0&&priority<=10)total+=(11-priority)*1.6
+  if(item?.is_featured)total+=7
+  const category=item?.category_key||item?.venue_category_key||''
+  const neighborhood=item?.neighborhood||''
+  total+=Math.max(-8,Math.min(12,affinityFor(intelligence?.category_affinity,category)))
+  total+=Math.max(-4,Math.min(7,affinityFor(intelligence?.neighborhood_affinity,neighborhood)))
+  const vibes=Array.isArray(profile?.vibe_preferences)?profile.vibe_preferences:[]
+  for(const vibe of vibes){if((VIBE_CATEGORY_HINTS[normalize(vibe)]||[]).includes(category))total+=3.5}
+  return total
+}
+function personalizedReason(item,profile,intelligence){
+  const category=item?.category_key||item?.venue_category_key||''
+  const neighborhood=item?.neighborhood||''
+  if(affinityFor(intelligence?.category_affinity,category)>0)return `Because you keep choosing ${cat(category)}`
+  if(neighborhood&&affinityFor(intelligence?.neighborhood_affinity,neighborhood)>0)return `Because ${neighborhood} fits your recent picks`
+  const vibes=Array.isArray(profile?.vibe_preferences)?profile.vibe_preferences:[]
+  if(vibes.length)return `Matched to your ${vibes.slice(0,2).join(' + ')} preferences`
+  return 'A strong current GOOD TIMES pick'
+}
+function freshnessLabel(value){if(!value)return null;const ms=Date.now()-new Date(value).getTime();if(!Number.isFinite(ms)||ms<0)return null;const mins=Math.floor(ms/60000);if(mins<60)return `Updated ${Math.max(1,mins)}m ago`;const hours=Math.floor(mins/60);if(hours<48)return `Updated ${hours}h ago`;return `Updated ${Math.floor(hours/24)}d ago`}
+function statusFor(event,city=event?.city_key,now=Date.now()){return eventStatus(event,city,now)}
+function matchText(item){return normalize([item?.title,item?.name,item?.venue_name,item?.neighborhood,item?.category_key,cat(item?.category_key),/restaurant|dining|cafe|coffee|bakery/.test(item?.category_key||'')?'restaurant restaurants dining food':'',item?.subcategory_key,item?.subcategory,item?.venue_subcategory,item?.short_desc,...(item?.vibe_tags||[]),...(item?.search_tags||[])].filter(Boolean).join(' '))}
+function safeMedia(value){const raw=String(value||'').trim();return raw&&!GENERIC_MEDIA.test(raw)?raw:null}
+function matchesIntent(item,intent,isEvent=false,city=item?.city_key,now=Date.now()){const i=normalize(intent),text=matchText(item);if(!i)return true;if(i==='tonight')return isEvent?eventIsTonight(item,city,now):true;if(i==='this weekend')return isEvent?eventIsThisWeekend(item,city,now):true;if(i==='black-owned')return Boolean(item.is_black_owned)||text.includes('black-owned');if(i==='live music')return /live music|concert|jazz|r&b|rnb|music|dj/.test(text);if(i==='brunch')return /brunch|day party/.test(text);if(i==='free')return /free/.test(text);if(i==='family')return /family|kids|museum|zoo|aquarium/.test(text);if(i==='late night')return /late|nightclub|lounge|after party|bar/.test(text);if(i==='date night')return /date|romantic|restaurant|wine|rooftop|fine dining|cocktail/.test(text);return true}
+function AppMark(){return <span className="gt5-mark">GT</span>}
+function Empty({title,body,action}){return <div className="gt5-empty"><AppMark/><h2>{title}</h2><p>{body}</p>{action}</div>}
+function Section({kicker,title,action,children,className=''}){return <section className={`gt5-section ${className}`}><header><div><span>{kicker}</span><h2>{title}</h2></div>{action}</header><div className="gt5-stack">{children}</div></section>}
+
+function EventCard({event,saved,onOpen,onSave,feature=false,city,now}){
+  if(COMPLETE_UPGRADE)return <CompleteCard item={event} kind="event" saved={saved} onOpen={onOpen} onSave={onSave}/>
+  const media=safeMedia(event.image_url)
+  return <article data-category={event.category_key} className={`gt5-card gt5-event ${feature?'gt5-card-feature':''} ${media?'':'gt5-no-media'}`} onClick={onOpen} role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onOpen()}}}>
+    <div className="gt5-card-media">{media?<img src={media} alt="" loading="lazy"/>:<div className="gt5-media-fallback"><AppMark/><small>{cat(event.category_key)}</small></div>}<div className="gt5-card-shade"/><span className="gt5-status">{statusFor(event,city,now)}</span></div>
+    <div className="gt5-card-copy"><small>{cat(event.category_key)}</small><h3>{event.title}</h3><p>{fmtDate(event.event_date)} · {fmtTime(event.event_time)}</p><em>{event.venue_name||'Location TBA'}</em><span className="gt5-card-action">View event ↗</span></div>
+    <button className={`gt5-save ${saved?'active':''}`} aria-label={saved?'Remove saved item':'Save item'} onClick={e=>{e.stopPropagation();onSave()}}><GoodTimesIcon glyph={saved?'✓':'♡'}/></button>
+  </article>
+}
+function VenueCard({venue,saved,onOpen,onSave}){
+  if(COMPLETE_UPGRADE)return <CompleteCard item={venue} kind="venue" saved={saved} onOpen={onOpen} onSave={onSave}/>
+  const media=safeMedia(venue.hero_image)
+  return <article data-category={venue.category_key} className={`gt5-card gt5-venue ${media?'':'gt5-no-media'}`} onClick={onOpen} role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onOpen()}}}>
+    <div className="gt5-card-media">{media?<img src={media} alt="" loading="lazy"/>:<div className="gt5-media-fallback"><AppMark/><small>{cat(venue.category_key)}</small></div>}<div className="gt5-card-shade"/>{venue.hero_image_kind==='brand artwork'&&<span className="gt5-status">BRAND ARTWORK</span>}{venue.is_black_owned&&<span className="gt5-status">BLACK-OWNED</span>}</div>
+    <div className="gt5-card-copy"><small>{cat(venue.category_key)}</small><h3>{venue.name}</h3><p>{(venue.short_desc&&!/^auto[- ]sourced/i.test(venue.short_desc)?venue.short_desc:null)||venue.subcategory||'Explore this place'}</p><em>{[venue.neighborhood,venue.google_rating?`★ ${Number(venue.google_rating).toFixed(1)}`:null,venue.price_range].filter(Boolean).join(' · ')}</em><span className="gt5-card-action">Explore place ↗</span></div>
+    <button className={`gt5-save ${saved?'active':''}`} aria-label={saved?'Remove saved item':'Save item'} onClick={e=>{e.stopPropagation();onSave()}}><GoodTimesIcon glyph={saved?'✓':'♡'}/></button>
+  </article>
+}
+function AdSlot({placement,city,onPlan,compact=false}){
+  const[ad,setAd]=useState(null),[loaded,setLoaded]=useState(false)
+  useEffect(()=>{let live=true;setLoaded(false);loadGoodTimesAd(placement,city).then(next=>{if(live){setAd(next);setLoaded(true)}}).catch(()=>{if(live)setLoaded(true)});return()=>{live=false}},[placement,city])
+  useEffect(()=>{if(ad)void trackGoodTimesAd({ad,placementKey:placement,citySlug:city,eventType:'impression'})},[ad,city,placement])
+  if(!loaded)return null
+  if(!ad&&compact)return null
+  if(!ad)return <aside className="gt5-ad gt5-house-ad" style={{'--gt5-ad-art':`url("${screenEditorialMedia(city,'plan')}")`}}><span>GOOD TIMES CONCIERGE</span><div><strong>Your next great night.</strong><p>Dinner, a show, one more stop. Make it yours.</p></div>{onPlan?<button onClick={onPlan}>Plan my night ↗</button>:<a href="/concierge-request">Plan with us ↗</a>}</aside>
+  return <aside className={compact?'gt5-ad gtc-paid-placement':'gt5-ad'}><span>SPONSORED · {ad.advertiser_name}</span>{ad.image_url&&<img src={ad.image_url} alt={ad.alt_text||''}/>}<div><strong>{ad.headline}</strong>{ad.body&&<p>{ad.body}</p>}</div>{ad.cta_url&&<a href={ad.cta_url} target="_blank" rel="noreferrer" onClick={()=>trackGoodTimesAd({ad,placementKey:placement,citySlug:city,eventType:'click'})}>{ad.cta_text||'Learn more'} ↗</a>}</aside>
+}
+function Hero({eyebrow,title,accent,subtitle,image,children,className=''}){return <section className={`gt5-hero ${className}`} style={{'--gt5-hero-image':`url("${image||GT_HOME_FALLBACK}")`}}><div className="gt5-hero-shade"/><div className="gt5-hero-copy"><span>{eyebrow}</span><h1>{title}{accent&&<><br/>{' '}<em>{accent}</em></>}</h1>{subtitle&&<p>{subtitle}</p>}{children}</div><div className="gt5-script">Good People<br/>Better Nights.</div></section>}
+
+function compactDay(value){
+  if(!value)return{dow:'TBA',day:'—',month:''}
+  const d=new Date(`${value}T12:00:00`)
+  return{dow:d.toLocaleDateString(undefined,{weekday:'short'}).toUpperCase(),day:d.toLocaleDateString(undefined,{day:'2-digit'}),month:d.toLocaleDateString(undefined,{month:'short'}).toUpperCase()}
+}
+function UpcomingRow({event,saved,onOpen,onSave,city,now}){
+  const media=safeMedia(event.image_url),date=compactDay(event.event_date)
+  return <article className={`gt5-upcoming-row ${media?'':'gt5-upcoming-row-no-media'}`} role="button" tabIndex={0} onClick={onOpen} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onOpen()}}}>
+    <div className="gt5-upcoming-date"><small>{date.dow}</small><strong>{date.day}</strong><em>{date.month}</em></div>
+    <div className="gt5-upcoming-thumb">{media?<img src={media} alt="" loading="lazy"/>:<AppMark/>}</div>
+    <div className="gt5-upcoming-copy"><small>{cat(event.category_key)} · {statusFor(event,city,now)}</small><strong>{event.title}</strong><span>{fmtTime(event.event_time)} · {event.venue_name||'Location TBA'}</span></div>
+    <button className={`gt5-upcoming-save ${saved?'active':''}`} aria-label={saved?'Remove saved item':'Save item'} onClick={e=>{e.stopPropagation();onSave()}}><GoodTimesIcon glyph={saved?'✓':'♡'}/></button>
+  </article>
+}
+function UpcomingNewsletter({city,events,savedKeys,onOpen,onSave,now,mode='upcoming'}){
+  const rows=mode==='tonight'?events.filter(e=>eventIsTonight(e,city,now)):events
+  const groups=rows.reduce((acc,event)=>{const key=event.event_date||'tba';(acc[key]??=[]).push(event);return acc},{})
+  const dates=Object.keys(groups).sort()
+  const title=mode==='tonight'?'Tonight in Atlanta':'Upcoming in Atlanta'
+  const kicker=mode==='tonight'?'RIGHT NOW · CURRENT VERIFIED MOVES':'THE CITY AHEAD · LIST VIEW'
+  return <section className={`gt5-newsletter gt5-newsletter-${mode}`}>
+    <header className="gt5-newsletter-head" style={{'--gt5-newsletter-art':`url("${screenEditorialMedia(city,mode==='tonight'?'radar':'home')}")`}}>
+      <span>{kicker}</span><h2>{title}</h2>
+      <p>{mode==='tonight'?'The strongest current options without the endless scroll.':'A clean chronological look at what is coming next — current GOOD TIMES data, not a static flyer.'}</p>
+    </header>
+    {dates.length?dates.map(date=><section className="gt5-upcoming-day" key={date}>
+      <header><div><small>{compactDay(date).dow}</small><strong>{fmtDate(date)}</strong></div><span>{groups[date].length} {groups[date].length===1?'pick':'picks'}</span></header>
+      <div>{groups[date].slice(0,mode==='tonight'?12:8).map(event=><UpcomingRow key={event.event_key} event={event} city={city} now={now} saved={savedKeys.has(`event:${event.event_key}`)} onOpen={()=>onOpen(event)} onSave={()=>onSave('event',event.event_key)}/>)}</div>
+    </section>):<Empty title={mode==='tonight'?'Tonight is still loading':'No upcoming dates verified yet'} body={mode==='tonight'?'GOOD TIMES will surface tonight’s verified moves as they become available.':'Check back as new verified city inventory is published.'}/>}
+  </section>
+}
+
+const ENTERTAINMENT_EVENT_CATEGORIES=new Set(['nightlife','day_parties_brunch','concerts_live_music','festivals_major_activations','sports_watch','comedy_performing_arts','arts_museums_culture','games_interactive','attractions_experiences','seasonal_holiday','family_kids','community_civic','black_culture_diaspora'])
+const PLACE_CATEGORY_KEYS=new Set(['dining_culinary','travel_staycations','attractions_experiences','wellness_fitness','fashion_beauty_shopping','family_kids'])
+const PLACE_LANES=[['dining_culinary','Restaurants','Everyday to fine dining · cuisine · occasion · vibe','dining'],['travel_staycations','Hotels & Stays','Hotels, staycations and places to reset','hotel'],['attractions_experiences','Attractions','Museums, gardens, scenic and destination places','experience'],['wellness_fitness','Wellness','Fitness, spa and wellness destinations','experience'],['fashion_beauty_shopping','Shopping','Markets, boutiques, beauty and retail','experience'],['family_kids','Family Places','Persistent places built for family time','experience']]
+const THIS_WEEK_GROUPS=[
+  ['NIGHTLIFE',['nightlife','day_parties_brunch']],
+  ['SPORTS',['sports_watch']],
+  ['CULTURE',['arts_museums_culture','community_civic','festivals_major_activations','black_culture_diaspora']],
+  ['LIVE',['concerts_live_music','comedy_performing_arts']],
+]
+function compactWeekRange(events){
+  const dates=[...new Set((events||[]).map(e=>e?.event_date).filter(Boolean))].sort()
+  if(!dates.length)return'THIS WEEK'
+  const first=new Date(`${dates[0]}T12:00:00`),last=new Date(`${dates[dates.length-1]}T12:00:00`)
+  const a=first.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()
+  const b=last.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()
+  return a===b?a:`${a} — ${b}`
+}
+function ThisWeekOverlay({city,events,venues,onClose,onEvent,onVenue,onExplore}){
+  const top=(events||[]).slice(0,5)
+  const restaurantPlaces=(venues||[]).filter(v=>/restaurant|dining|cafe|coffee|bakery|brunch|food/.test(normalize(`${v.category_key} ${v.subcategory} ${v.venue_subcategory}`))).slice(0,4)
+  const lanes=THIS_WEEK_GROUPS.map(([label,keys])=>[label,(events||[]).filter(e=>keys.includes(e.category_key)).slice(0,4)]).filter(([,rows])=>rows.length)
+  const openEvent=item=>{onClose();onEvent(item)}
+  const openVenue=item=>{onClose();onVenue(item)}
+  return <div className="gt-week" role="dialog" aria-modal="true" aria-label={`${cityLabel(city)} this week quick view`}>
+    <article className="gt-week-sheet">
+      <header className="gt-week-mast">
+        <button className="gt-week-close" onClick={onClose} aria-label="Close this week">×</button>
+        <div><span>GOOD TIMES</span><small>{cityLabel(city).toUpperCase()}</small></div>
+        <p>THE CITY. CURATED.</p>
+      </header>
+      <section className="gt-week-lead">
+        <span>QUICK VIEW · {compactWeekRange(events)}</span>
+        <h1>{cityLabel(city)}<br/><em>This Week.</em></h1>
+        <p>Real events. Real places. The strongest current moves without the endless scroll.</p>
+      </section>
+      {top.length>0&&<section className="gt-week-top">
+        <header><span>TOP PICKS</span><strong>THIS WEEK</strong></header>
+        <div>{top.map((item,index)=><button key={item.event_key} onClick={()=>openEvent(item)}>
+          <b>{String(index+1).padStart(2,'0')}</b>
+          <span><strong>{item.title}</strong><small>{fmtDate(item.event_date)} · {fmtTime(item.event_time)}{item.venue_name?` · ${item.venue_name}`:''}</small></span>
+          <i>›</i>
+        </button>)}</div>
+      </section>}
+      <section className="gt-week-grid">
+        {restaurantPlaces.length>0&&<div className="gt-week-lane gt-week-food">
+          <header><span>FOOD + DRINK</span><small>PLACES WORTH KNOWING</small></header>
+          <div>{restaurantPlaces.map(v=><button key={v.id} onClick={()=>openVenue(v)}>
+            {safeMedia(v.hero_image)?<img src={safeMedia(v.hero_image)} alt=""/>:<b>GT</b>}
+            <span><strong>{v.name}</strong><small>{[v.neighborhood,v.subcategory||cat(v.category_key)].filter(Boolean).join(' · ')}</small></span>
+          </button>)}</div>
+        </div>}
+        {lanes.map(([label,rows])=><div className="gt-week-lane" key={label}>
+          <header><span>{label}</span><small>CURATED NOW</small></header>
+          <div>{rows.map(item=><button key={item.event_key} onClick={()=>openEvent(item)}>
+            {safeMedia(item.image_url)?<img src={safeMedia(item.image_url)} alt=""/>:<b>GT</b>}
+            <span><strong>{item.title}</strong><small>{fmtDate(item.event_date)} · {item.venue_name||'Location TBA'}</small></span>
+          </button>)}</div>
+        </div>)}
+      </section>
+      <section className="gt-week-plan">
+        <span>PLAN SMARTER WITH GOOD TIMES</span>
+        <h2>Know the week.<br/>Then make your move.</h2>
+        <p>Save what matters, build a night, follow places and keep the city in your pocket.</p>
+        <button onClick={()=>{onClose();onExplore()}}>SEE EVERYTHING →</button>
+      </section>
+      <footer><strong>GOOD TIMES</strong><span>SAME CITY. MORE GOOD TIMES.</span></footer>
+    </article>
+  </div>
+}
+
+export default function GoodTimesCommandAppV4({onAuth=null}){
+  const[session,setSession]=useState(()=>readSession())
+  const[clockNow,setClockNow]=useState(()=>Date.now())
+  useEffect(()=>{let live=true;const sync=async()=>{const result=await refreshStoredSession().catch(()=>({session:readSession()}));if(!live)return;const next=result?.session||readSession();setSession(current=>current?.access_token===next?.access_token&&current?.expires_at===next?.expires_at?current:next)};void sync();const timer=window.setInterval(()=>void sync(),30000);const focus=()=>void sync();const visibility=()=>{if(document.visibilityState==='visible')void sync()};window.addEventListener('focus',focus);document.addEventListener('visibilitychange',visibility);return()=>{live=false;window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',visibility)}},[])
+  useEffect(()=>{const tick=()=>setClockNow(Date.now());const timer=window.setInterval(tick,60000);document.addEventListener('visibilitychange',tick);window.addEventListener('focus',tick);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',tick);window.removeEventListener('focus',tick)}},[])
+  const[profile,setProfile]=useState(null),[intelligence,setIntelligence]=useState(null),[events,setEvents]=useState([]),[venues,setVenues]=useState([]),[taxonomy,setTaxonomy]=useState([]),[saved,setSaved]=useState([]),[plans,setPlans]=useState([])
+  const[city,setCity]=useState('atlanta'),[tab,setTab]=useState('home'),[loading,setLoading]=useState(true),[query,setQuery]=useState(''),[intent,setIntent]=useState('')
+  const[selectedEvent,setSelectedEvent]=useState(null),[selectedVenue,setSelectedVenue]=useState(null),[selectedPlan,setSelectedPlan]=useState(null),[toast,setToast]=useState('')
+  const[selectedCategory,setSelectedCategory]=useState(null),[selectedSubcategory,setSelectedSubcategory]=useState(null),[directoryOpen,setDirectoryOpen]=useState(false),[mapMode,setMapMode]=useState(false)
+  const[planWhen,setPlanWhen]=useState('Tonight'),[planBudget,setPlanBudget]=useState('Any budget'),[planPeople,setPlanPeople]=useState('2')
+  const[conciergeText,setConciergeText]=useState(''),[conciergeBusy,setConciergeBusy]=useState(false),[conciergeResult,setConciergeResult]=useState(null),[conciergeMessage,setConciergeMessage]=useState(''),[planMode,setPlanMode]=useState('ai'),[planIntent,setPlanIntent]=useState('')
+  const[follows,setFollows]=useState([]),[alertPrefs,setAlertPrefs]=useState(DEFAULT_ALERT_PREFS),[alerts,setAlerts]=useState([]),[savedView,setSavedView]=useState('plans')
+  const[preferencesOpen,setPreferencesOpen]=useState(false),[preferenceDraft,setPreferenceDraft]=useState([]),[preferenceSaving,setPreferenceSaving]=useState(false)
+  const[weeklyOpen,setWeeklyOpen]=useState(false),[homeMode,setHomeMode]=useState('for-you')
+  const[collection,setCollection]=useState(null),[planAnchor,setPlanAnchor]=useState(null),[contentError,setContentError]=useState(''),[globalQuery,setGlobalQuery]=useState('')
+  const saveInFlight=useRef(new Set())
+  const returnTab=useRef('home')
+
+  useEffect(()=>{document.body.classList.add('gt-app-mode','gt5-mode');return()=>{document.body.classList.remove('gt-app-mode','gt5-mode')}},[])
+  const refresh=useCallback(async nextCity=>{setLoading(true);setContentError('');const taxonomyPromise=loadExploreTaxonomy().catch(()=>[]);try{const[e,v]=await Promise.all([(COMPLETE_UPGRADE?loadCanonicalEvents(nextCity,{limit:80,throwOnError:true}):loadCanonicalEvents(nextCity,{limit:80})).catch(error=>{if(COMPLETE_UPGRADE)setContentError(error.message||'Events could not refresh.');return []}),loadCanonicalVenues(nextCity,{limit:120}).catch(error=>{if(COMPLETE_UPGRADE)setContentError(error.message||'Places could not refresh.');return []})]);const hardened=hardenDisplayInventory(COMPLETE_UPGRADE?correctDisplayEvents(e||[]):e||[],withReviewedVenueMedia(v||[]));setEvents(hardened.events);setVenues(hardened.venues)}finally{setLoading(false)}void taxonomyPromise.then(t=>setTaxonomy(t||[]))},[])
+  const refreshAccount=useCallback(async p=>{if(!p?.id)return;const[s,i,r,learned]=await Promise.all([loadSavedItems(p.id,session).catch(()=>[]),loadItineraries(session).catch(()=>[]),loadRadarState(session).catch(()=>({follows:[],preferences:DEFAULT_ALERT_PREFS,alerts:[]})),loadUserIntelligenceProfile(session).catch(()=>null)]);setSaved(s||[]);setPlans(i||[]);setFollows(r.follows||[]);setAlertPrefs({...DEFAULT_ALERT_PREFS,...(r.preferences||{})});setAlerts(r.alerts||[]);setIntelligence(learned||null)},[session])
+  useEffect(()=>{let live=true;(async()=>{const p=await loadGoodTimesProfile(session).catch(()=>null);if(!live)return;setProfile(p);const c='atlanta';setCity(c);await Promise.all([refresh(c),refreshAccount(p)]);if(session?.user?.id&&(p?.last_city!=='atlanta'||p?.home_city!=='atlanta'))void updatePreferences(session.user.id,{last_city:'atlanta',home_city:'atlanta'},session.access_token).catch(()=>false)})();return()=>{live=false}},[refresh,refreshAccount,session])
+  useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(''),2400);return()=>clearTimeout(timer)},[toast])
+
+  const savedKeys=useMemo(()=>new Set(saved.map(x=>`${x.item_type}:${x.item_id}`)),[saved])
+  const followKeys=useMemo(()=>new Set(follows.filter(x=>x.is_active!==false).map(x=>`${x.entity_type}:${x.entity_id}`)),[follows])
+  const activeEvents=useMemo(()=>events.filter(e=>eventIsDiscoverable(e,city,clockNow)),[events,city,clockNow])
+  const today=useMemo(()=>activeEvents.filter(e=>eventIsTonight(e,city,clockNow)),[activeEvents,city,clockNow])
+  const week=useMemo(()=>activeEvents.filter(e=>daysAway(e.event_date,city,clockNow)>=0&&daysAway(e.event_date,city,clockNow)<=7),[activeEvents,city,clockNow])
+  const upcomingEvents=useMemo(()=>activeEvents.filter(e=>{const d=daysAway(e.event_date,city,clockNow);return d>=0&&d<=14}).sort((a,b)=>String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'99').localeCompare(String(b.event_time||'99'))||score(b)-score(a)),[activeEvents,city,clockNow])
+  const rankedEvents=useMemo(()=>[...activeEvents].sort((a,b)=>personalizedScore(b,profile,intelligence)-personalizedScore(a,profile,intelligence)||daysAway(a.event_date,city,clockNow)-daysAway(b.event_date,city,clockNow)),[activeEvents,city,clockNow,profile,intelligence])
+  const rankedVenues=useMemo(()=>[...venues].sort((a,b)=>personalizedScore(b,profile,intelligence)-personalizedScore(a,profile,intelligence)||Number(b.google_rating||0)-Number(a.google_rating||0)),[venues,profile,intelligence])
+  const homeVenues=useMemo(()=>rankedVenues.filter(v=>!HOME_EXCLUDED_PLACE_TYPES.test(normalize(`${v.category_key} ${v.subcategory} ${v.venue_subcategory}`))),[rankedVenues])
+  const placePreview=useMemo(()=>homeVenues.filter(v=>PLACE_CATEGORY_KEYS.has(v.category_key)||/restaurant|dining|cafe|coffee|bakery|attraction|museum|wellness|shopping|family/.test(normalize(`${v.category_key} ${v.subcategory} ${v.venue_subcategory}`))).slice(0,8),[homeVenues])
+  const placesTaxonomy=useMemo(()=>taxonomy.filter(c=>PLACE_CATEGORY_KEYS.has(c.id||c.category_key)),[taxonomy])
+  const entertainmentPlaceTaxonomy=useMemo(()=>taxonomy.filter(c=>['nightlife','entertainment'].includes(c.id||c.category_key)),[taxonomy])
+  const highlights=useMemo(()=>homeHighlights(rankedEvents,homeVenues),[rankedEvents,homeVenues])
+  const hasTasteProfile=Boolean((profile?.vibe_preferences||[]).length||Number(intelligence?.signal_count||0)>0)
+  const forYouEvents=useMemo(()=>hasTasteProfile?rankedEvents.slice(1,5):[],[hasTasteProfile,rankedEvents])
+  const filteredEvents=useMemo(()=>{const q=normalize(query);return activeEvents.filter(item=>(!q||matchText(item).includes(q))&&matchesIntent(item,intent,true,city,clockNow))},[activeEvents,intent,query,city,clockNow])
+  const filteredVenues=useMemo(()=>{const q=normalize(query);return rankedVenues.filter(item=>(!q||matchText(item).includes(q))&&matchesIntent(item,intent,false,city,clockNow))},[rankedVenues,intent,query,city,clockNow])
+  const entertainmentEvents=useMemo(()=>activeEvents.filter(item=>ENTERTAINMENT_EVENT_CATEGORIES.has(item.category_key)).sort((a,b)=>daysAway(a.event_date,city,clockNow)-daysAway(b.event_date,city,clockNow)||personalizedScore(b,profile,intelligence)-personalizedScore(a,profile,intelligence)).slice(0,8),[activeEvents,city,clockNow,profile,intelligence])
+  const radar=useMemo(()=>{const rows=[];const urgent=rankedEvents.find(e=>['SELLING FAST','PRESALE','NEW'].includes(statusFor(e,city,clockNow)));const tonightPick=rankedEvents.find(e=>eventIsTonight(e,city,clockNow));const upcoming=rankedEvents.find(e=>daysAway(e.event_date,city,clockNow)>0&&daysAway(e.event_date,city,clockNow)<=7);if(urgent)rows.push({label:statusFor(urgent,city,clockNow),item:urgent});if(tonightPick&&!rows.some(r=>r.item===tonightPick))rows.push({label:'TONIGHT',item:tonightPick});if(upcoming&&!rows.some(r=>r.item===upcoming))rows.push({label:'THIS WEEK',item:upcoming});return rows.slice(0,5)},[rankedEvents,city,clockNow])
+  const upcomingByCategory=useMemo(()=>['concerts_live_music','sports_watch','festivals_major_activations'].map(key=>({key,events:activeEvents.filter(e=>e.category_key===key).sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date))||String(a.event_time||'99').localeCompare(String(b.event_time||'99'))).slice(0,3)})),[activeEvents])
+  const heroMedia=useMemo(()=>screenEditorialMedia(city,tab),[city,tab])
+
+  useEffect(()=>{if(!session?.user?.id||!events.length||!follows.length)return;const prefMap={NEW:'just_announced',PRESALE:'presale','SELLING FAST':'selling_fast',TONIGHT:'saved_reminders'};for(const follow of follows.filter(x=>x.entity_type==='event'&&x.is_active!==false)){const item=events.find(e=>String(e.event_key)===String(follow.entity_id));if(!item)continue;const status=statusFor(item,city,clockNow),pref=prefMap[status];if(!pref||alertPrefs?.[pref]===false)continue;const alertType=status==='NEW'?'just_announced':status==='PRESALE'?'presale':status==='SELLING FAST'?'selling_fast':'saved_reminder';void enqueueRadarAlert({alertType,objectType:'event',objectId:item.event_key,citySlug:city,title:`${status}: ${item.title}`,body:`${fmtDate(item.event_date)} · ${fmtTime(item.event_time)} · ${item.venue_name||'Location TBA'}`,actionUrl:'/',dedupeKey:`${session.user.id}:event:${item.event_key}:${status}:${item.event_date||todayISO()}`,metadata:{source:'client-radar-sync'}},session)}},[alertPrefs,city,events,follows,session,clockNow])
+
+  const changeCity=async()=>{const c='atlanta';setCity(c);setQuery('');setIntent('');setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);await refresh(c);if(session?.user?.id)await updatePreferences(session.user.id,{last_city:'atlanta',home_city:'atlanta'},session.access_token).catch(()=>false)}
+  const toggleSave=async(type,id)=>{if(!profile?.id){setToast('Sign in to save and personalize.');if(onAuth)onAuth();return}const key=`${type}:${id}`,exists=savedKeys.has(key);if(saveInFlight.current.has(key))return;saveInFlight.current.add(key);try{if(exists){await unsaveItem({profileId:profile.id,itemType:type,itemId:id},session);setSaved(rows=>rows.filter(row=>`${row.item_type}:${row.item_id}`!==key));setToast('Removed from Saved.')}else{await saveItem({profileId:profile.id,itemType:type,itemId:id},session);setSaved(await loadSavedItems(profile.id,session));setToast('Saved.')}}catch(error){setToast(error.message||'Could not save.')}finally{saveInFlight.current.delete(key)}}
+  const toggleFollow=async(type,item)=>{if(!session?.user?.id){setToast('Sign in to follow and get Radar alerts.');if(onAuth)onAuth();return}const id=type==='event'?item.event_key:item.id,key=`${type}:${id}`,exists=followKeys.has(key);try{if(exists){await unfollowEntity({entityType:type,entityId:id},session);setFollows(rows=>rows.filter(r=>`${r.entity_type}:${r.entity_id}`!==key));setToast('Radar stopped watching this.')}else{const row=await followEntity({entityType:type,entityId:id,citySlug:city,alertLevel:alertPrefs.intensity||'normal',metadata:{name:item.title||item.name,venue_name:item.venue_name||null}},session);if(row)setFollows(rows=>[row,...rows.filter(r=>`${r.entity_type}:${r.entity_id}`!==key)]);setToast('Radar is watching it.');void recordTasteSignal({entityType:type,entityId:id,signalType:'follow',signalValue:2,city},session)}}catch(error){setToast(error.message||'Could not update Radar.')}}
+  const updatePrefs=async patch=>{const next={...alertPrefs,...patch};setAlertPrefs(next);try{const stored=await saveRadarPreferences(next,session);setAlertPrefs({...DEFAULT_ALERT_PREFS,...stored});setToast('Radar settings saved.')}catch(error){setToast(error.message||'Could not save Radar settings.')}}
+  const openEvent=e=>{setSelectedEvent(e);void recordProductEvent({eventName:'event_opened',surface:tab,objectType:'event',objectId:e.event_key,city},session);void recordTasteSignal({entityType:'event',entityId:e.event_key,signalType:'view',city},session)}
+  const openVenue=v=>{setSelectedVenue(v);void recordProductEvent({eventName:'venue_opened',surface:tab,objectType:'venue',objectId:v.id,city},session);void recordTasteSignal({entityType:'venue',entityId:v.id,signalType:'view',city},session)}
+  const shareExperience=async(type,item)=>{
+    const title=item?.title||item?.name||'GOOD TIMES'
+    const detail=type==='event'?[fmtDate(item?.event_date),fmtTime(item?.event_time),item?.venue_name].filter(Boolean).join(' · '):[item?.neighborhood,cat(item?.category_key)].filter(Boolean).join(' · ')
+    const ok=await shareContent({title,text:[title,detail,'Found on GOOD TIMES'].filter(Boolean).join('\n'),url:window.location.origin,dialogTitle:'Share from GOOD TIMES'})
+    if(ok){setToast('Shared from GOOD TIMES.');void recordProductEvent({eventName:'share_clicked',surface:tab,objectType:type,objectId:type==='event'?item?.event_key:item?.id,city},session);void recordTasteSignal({entityType:type,entityId:type==='event'?item?.event_key:item?.id,signalType:'share',signalValue:2,city},session)}
+  }
+  const openPreferences=()=>{
+    if(!session?.user?.id){setToast('Sign in to personalize GOOD TIMES.');if(onAuth)onAuth();return}
+    setPreferenceDraft(Array.isArray(profile?.vibe_preferences)?profile.vibe_preferences:[])
+    setPreferencesOpen(true)
+  }
+  const togglePreference=value=>setPreferenceDraft(rows=>rows.includes(value)?rows.filter(x=>x!==value):(rows.length<5?[...rows,value]:rows))
+  const savePreferences=async()=>{
+    if(!session?.user?.id||preferenceSaving)return
+    setPreferenceSaving(true)
+    try{
+      const ok=await updatePreferences(session.user.id,{vibe_preferences:preferenceDraft},session.access_token)
+      if(!ok)throw new Error('Could not save preferences.')
+      setProfile(current=>({...current,vibe_preferences:preferenceDraft}))
+      try{localStorage.setItem('gt_personalization',JSON.stringify({city,vibes:preferenceDraft,updated_at:new Date().toISOString()}))}catch{}
+      void recordProductEvent({eventName:'preferences_updated',surface:'profile',objectType:'profile',objectId:session.user.id,city,properties:{vibes:preferenceDraft.join(',')}},session)
+      setPreferencesOpen(false)
+      setToast('Your GOOD TIMES preferences are updated.')
+    }catch(error){setToast(error.message||'Could not save preferences.')}finally{setPreferenceSaving(false)}
+  }
+
+  const runConcierge=async(text=conciergeText,action='recommend')=>{const clean=String(text||'').trim();if(!clean||conciergeBusy)return;setConciergeBusy(true);setConciergeMessage('');void recordTasteSignal({entityType:'category',entityId:clean.slice(0,120),signalType:'concierge_select',city,metadata:{action}},session);try{const result=hardenRecommendationResult(await askGoodTimesConcierge({query:clean,action,city},session));setConciergeResult(result);setConciergeMessage(result?.message||'Here are the strongest current options.');if(result?.itinerary){setPlans(rows=>[result.itinerary,...rows.filter(x=>x.id!==result.itinerary.id)]);setSelectedPlan(result.itinerary);setToast('Your night is ready.')}}catch(error){setConciergeMessage(error.message||'I could not verify a strong answer from current data.')}finally{setConciergeBusy(false)}}
+  const goTab=id=>{if(COMPLETE_UPGRADE)setCollection(null);if(id==='radar'){returnTab.current=PRIMARY_TABS.has(tab)?tab:'home'}setTab(id);if(id==='places'){setQuery('');setIntent('');setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setMapMode(false)}if(id!=='places'){setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false)}document.querySelector('.gt5-main')?.scrollTo?.({top:0,behavior:'instant'})}
+  const goBack=()=>{if(tab==='radar'){goTab(returnTab.current||'home');return}if(tab==='search'){goTab('home');return}if(tab==='places'&&directoryOpen){setDirectoryOpen(false);setSelectedSubcategory(null);return}if(tab==='places'&&selectedCategory){setSelectedCategory(null);setSelectedSubcategory(null);return}if(tab==='entertainment'&&collection){setCollection(null);return}goTab('home')}
+  const choosePlanIntent=(id,label)=>{setPlanIntent(id);setConciergeText(label==='I\'m open'?`Surprise me with a high-quality night in ${cityLabel(city)}.`:`${label} in ${cityLabel(city)}.`)}
+  const activateLane=lane=>{const[, ,label,search]=lane;setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setQuery(search);setIntent(label==='Nightlife'?'Late Night':label==='Concerts & Live Music'?'Live Music':'');}
+
+  useEffect(()=>{if(!COMPLETE_UPGRADE)return;document.body.classList.add('gt-complete-mode');return()=>document.body.classList.remove('gt-complete-mode')},[])
+  const runGlobalSearch=search=>{const value=String(search||'').trim();setGlobalQuery(value);setCollection(null);setTab('search');document.querySelector('.gt5-main')?.scrollTo?.({top:0,behavior:'instant'})}
+  const openCollection=(category=null,search='')=>{const entertainment=category&&ENTERTAINMENT_EVENT_CATEGORIES.has(category);if(entertainment){goTab('entertainment');setCollection(category==='sports_watch'?{kind:'sports'}:{kind:'events',category});return}goTab('places');setQuery(search||'');setIntent('');setSelectedCategory(category);setSelectedSubcategory(null);setDirectoryOpen(false);setMapMode(false)}
+  const addToPlan=item=>{setSelectedEvent(null);setSelectedVenue(null);setPlanAnchor(item);goTab('plan')}
+  const savedPlan=row=>{setPlans(prev=>[row,...prev.filter(p=>p.id!==row.id)]);setSelectedPlan(row);setToast('Plan saved.')}
+  useEffect(()=>{if(!COMPLETE_UPGRADE)return;const u=new URL(window.location.href),id=u.searchParams.get('item'),kind=u.searchParams.get('kind');if(!id||!['event','venue'].includes(kind)||!/^([a-z_]+:)?[a-f0-9-]{36}$/i.test(id))return;const c=new AbortController();fetch('/api/browse?'+new URLSearchParams({kind:kind==='event'?'events':'venue',id}),{signal:c.signal}).then(r=>r.json()).then(r=>{if(!r.ok||!r.items?.[0])setToast('This shared listing is no longer available.');else if(kind==='event')setSelectedEvent(r.items[0]);else setSelectedVenue(r.items[0])}).catch(()=>{if(!c.signal.aborted)setToast('Could not open the shared listing. Please retry.')});return()=>c.abort()},[])
+  const hydrating=loading&&!events.length&&!venues.length
+  return <div className={`gt5-app ${COMPACT_PILOT||COMPLETE_UPGRADE ? 'gt5-compact-pilot' : ''} ${COMPLETE_UPGRADE?'gt5-complete':''}`} data-screen={tab} data-complete-upgrade={COMPLETE_UPGRADE?'true':undefined} data-compact-pilot={COMPACT_PILOT ? 'preview' : undefined}>
+    {hydrating&&<span className="gt5-sr-status" role="status" aria-live="polite">{`Loading ${cityLabel(city)} recommendations…`}</span>}
+    <header className="gt5-topbar"><button className="gt5-brand" onClick={()=>goTab('home')}><AppMark/><span><strong>GOOD TIMES</strong><small>WORLDWIDE EXPERIENCE CONCIERGE</small></span></button><div className="gt5-top-actions"><button className="gt5-city" onClick={()=>goTab('profile')}><GoodTimesIcon name="pin" size={16}/> {cityLabel(city)}⌄</button><button className="gt5-bell" aria-label="Open GOOD TIMES Radar" onClick={()=>goTab('radar')}><GoodTimesIcon name="bell"/>{alerts.length>0&&<i/>}</button></div></header>
+    {tab!=='radar'&&<button className="gt5-radar-strip" onClick={()=>goTab('radar')}><span><i/> CITY RADAR</span><strong>{radar[0]?`${radar[0].label}: ${radar[0].item.title}`:`Watching ${follows.length} things that matter`}</strong><em>›</em></button>}
+
+    <main className="gt5-main">
+      {COMPLETE_UPGRADE&&tab==='home'&&<CompleteHome events={events} venues={homeVenues} profile={profile} savedKeys={savedKeys} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onExplore={openCollection} onSearch={runGlobalSearch} onPlaces={()=>goTab('places')} onEntertainment={mode=>{goTab('entertainment');setCollection({kind:'hub',mode})}} onPlan={()=>goTab('plan')} mode={homeMode} onMode={setHomeMode} now={clockNow} loading={loading} error={contentError} onRetry={()=>refresh('atlanta')} sponsored={<AdSlot compact placement="home_between_sections" city={city}/>}/>}
+      {COMPLETE_UPGRADE&&tab==='places'&&<section className="gt5-discover gtc-discover gtc-places"><header className="gtc-page-heading"><div><h1>Places</h1><small>Persistent destinations—restaurant-first, interest-driven, and built for actual decisions.</small></div></header>{selectedCategory==='dining_culinary'?<RestaurantExplorer savedKeys={savedKeys} onVenue={openVenue} onSave={toggleSave} initialQuery={query} onBack={()=>{setSelectedCategory(null);setSelectedSubcategory(null);setQuery('')}}/>:<><div className="gtc-search"><input aria-label="Search Atlanta places" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Restaurants, hotels, attractions, wellness, neighborhoods…"/>{query&&<button aria-label="Clear search" onClick={()=>setQuery('')}>×</button>}</div>{!selectedCategory&&!query&&<><div className="gtc-place-lanes">{PLACE_LANES.map(([key,label,desc,art])=><button key={key} style={{backgroundImage:`linear-gradient(90deg,rgba(5,6,7,.92),rgba(5,6,7,.55)),url("${categoryEditorialMedia(art,homeVenues,city)}")`}} onClick={()=>setSelectedCategory(key)}><span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b></button>)}</div>{placePreview.length>0&&<section className="gtc-place-preview"><header><div><h2>Places worth knowing</h2><small>Current Atlanta picks across dining, attractions, wellness, shopping and family.</small></div></header><div className="gtc-grid">{placePreview.map(venue=><CompleteCard key={venue.id} kind="venue" item={venue} saved={savedKeys.has(`venue:${venue.id}`)} onOpen={()=>openVenue(venue)} onSave={()=>toggleSave('venue',venue.id)}/>)}</div></section>}</>}{(selectedCategory||query)&&<ExploreTaxonomyBrowser compact externalSearch taxonomy={placesTaxonomy} directory={venues} cityName="Atlanta" query={query} onQuery={setQuery} selectedCategory={selectedCategory} selectedSubcategory={selectedSubcategory} onCategory={setSelectedCategory} onSubcategory={setSelectedSubcategory} directoryOpen={directoryOpen} onDirectoryOpen={setDirectoryOpen} mapMode={mapMode} onMapMode={setMapMode} eventsFirst={false} renderVenue={venue=><CompleteCard key={venue.id} kind="venue" item={venue} saved={savedKeys.has(`venue:${venue.id}`)} onOpen={()=>openVenue(venue)} onSave={()=>toggleSave('venue',venue.id)}/>}/>}<AdSlot compact placement="discover_inline" city={city}/></>}</section>}
+      {COMPLETE_UPGRADE&&tab==='entertainment'&&(collection?.kind==='sports'?<CompleteSports onPlaces={()=>{setCollection({kind:'venues',category:'nightlife'});setSelectedCategory('nightlife')}} now={clockNow} savedKeys={savedKeys} onEvent={openEvent} onSave={toggleSave} onBack={()=>setCollection(null)}/>:collection?.kind==='events'?<EventCollection category={collection.category} now={clockNow} initialEvents={events} savedKeys={savedKeys} onEvent={openEvent} onSave={toggleSave} onClose={()=>setCollection(null)}/>:collection?.kind==='interactive'?<InteractiveCollection venues={homeVenues} events={activeEvents} savedKeys={savedKeys} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onBack={()=>setCollection(null)}/>:collection?.kind==='venues'?<section className="gtc-entertainment-venues"><header className="gtc-page-heading"><button onClick={()=>{setCollection(null);setSelectedCategory(null);setSelectedSubcategory(null)}} aria-label="Back to Entertainment">←</button><div><h1>Bars & Lounges</h1><small>Canonical venues—hours, vibe and details here; dated programming stays in Entertainment events.</small></div></header><ExploreTaxonomyBrowser compact externalSearch taxonomy={entertainmentPlaceTaxonomy} directory={venues} cityName="Atlanta" query={query} onQuery={setQuery} selectedCategory={selectedCategory||collection.category} selectedSubcategory={selectedSubcategory} onCategory={setSelectedCategory} onSubcategory={setSelectedSubcategory} directoryOpen={directoryOpen} onDirectoryOpen={setDirectoryOpen} mapMode={mapMode} onMapMode={setMapMode} eventsFirst={false} renderVenue={venue=><CompleteCard key={venue.id} kind="venue" item={venue} saved={savedKeys.has(`venue:${venue.id}`)} onOpen={()=>openVenue(venue)} onSave={()=>toggleSave('venue',venue.id)}/>}/></section>:<EntertainmentHub events={activeEvents} now={clockNow} savedKeys={savedKeys} onEvent={openEvent} onSave={toggleSave} onSearch={runGlobalSearch} initialMode={collection?.kind==='hub'?collection.mode:'tonight'} onOpenCategory={category=>setCollection({kind:'events',category})} onOpenVenues={category=>{setCollection({kind:'venues',category});setSelectedCategory(category);setSelectedSubcategory(null);setDirectoryOpen(false)}} onOpenSports={()=>setCollection({kind:'sports'})} onOpenInteractive={()=>setCollection({kind:'interactive'})} onPlan={()=>goTab('plan')}/>)}
+      {COMPLETE_UPGRADE&&tab==='search'&&<GlobalSearch initialQuery={globalQuery} savedKeys={savedKeys} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onClose={()=>goTab('home')} onPlan={()=>goTab('plan')}/>}
+      {COMPLETE_UPGRADE&&tab==='plan'&&<CompletePlanner session={session} venues={venues} savedKeys={savedKeys} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onGenerated={setSelectedPlan} anchor={planAnchor} onClearAnchor={()=>setPlanAnchor(null)} onAsk={runConcierge} askText={conciergeText} onAskText={setConciergeText} askBusy={conciergeBusy} askResult={conciergeResult} askMessage={conciergeMessage}/>}
+
+      {!COMPLETE_UPGRADE&&tab==='home'&&<>
+        <Hero eyebrow={`GOOD TIMES · ${cityLabel(city).toUpperCase()}`} title="A Better" accent="Tonight." subtitle="Dining. Nightlife. Events. Experiences. All in one place." image={heroMedia} className="gt5-home-hero">
+          <div className="gt5-hero-search"><span><GoodTimesIcon glyph="⌕"/></span><input value={conciergeText} onChange={e=>setConciergeText(e.target.value)} aria-label="Ask Good Times" placeholder="What are you in the mood for tonight?" onKeyDown={e=>{if(e.key==='Enter'){goTab('plan');void runConcierge(conciergeText,'recommend')}}}/><button onClick={()=>{goTab('plan');void runConcierge(conciergeText,'recommend')}}>→</button></div>
+          {!COMPACT_PILOT&&(<div className="gt5-home-quick">{[['🍴','Restaurants','dining'],['◇','Nightlife','Late Night'],['☆','Events','Tonight'],['▱','Hotels','hotel'],['✦','Experiences','experience'],['▤','This Week','this-week']].map(([icon,label,value])=><button key={label} onClick={()=>{if(value==='this-week'){setWeeklyOpen(true);return}goTab('places');setQuery(value==='dining'||value==='hotel'||value==='experience'?value:'');setIntent(value==='Late Night'||value==='Tonight'?value:'')}}><b><GoodTimesIcon glyph={icon}/></b><small>{label}</small></button>)}</div>)}
+        </Hero>
+        <nav className="gt5-home-modes" aria-label="GOOD TIMES Home views">
+          {[['for-you','For You'],['upcoming','Upcoming'],['tonight','Tonight']].map(([id,label])=><button key={id} className={homeMode===id?'active':''} aria-pressed={homeMode===id} onClick={()=>setHomeMode(id)}>{label}</button>)}
+        </nav>
+        {homeMode==='upcoming'?<UpcomingNewsletter city={city} events={upcomingEvents} savedKeys={savedKeys} onOpen={openEvent} onSave={toggleSave} now={clockNow}/>:homeMode==='tonight'?<UpcomingNewsletter city={city} events={today} savedKeys={savedKeys} onOpen={openEvent} onSave={toggleSave} now={clockNow} mode="tonight"/>:<>
+        {highlights.length>0&&<Section className="gt5-highlights" kicker={`YOUR CITY · YOUR NEXT GOOD TIME`} title={`What's on in ${cityLabel(city)}`} action={<button onClick={()=>{goTab('places');setIntent('');setQuery('')}}>See all</button>}><div className="gt5-highlight-grid">{highlights.map(({type,item})=>type==='event'?<EventCard key={item.event_key} city={city} now={clockNow} event={item} saved={savedKeys.has(`event:${item.event_key}`)} onOpen={()=>openEvent(item)} onSave={()=>toggleSave('event',item.event_key)}/>:<VenueCard key={item.id} venue={item} saved={savedKeys.has(`venue:${item.id}`)} onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div></Section>}
+        {forYouEvents.length>0&&<Section kicker="FOR YOU · LEARNS AS YOU USE IT" title="Picked around your taste"><div className="gt5-trending-grid">{forYouEvents.map(e=><div key={e.event_key}><small className="gt5-personal-reason">{personalizedReason(e,profile,intelligence)}</small><EventCard city={city} now={clockNow} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/></div>)}</div></Section>}
+        <AdSlot placement="home_between_sections" city={city} onPlan={()=>goTab('plan')}/>
+        <Section kicker={`GT PICKS · ${cityLabel(city).toUpperCase()}`} title="Restaurants worth knowing" action={<button onClick={()=>goTab('places')}>See all</button>}><div className="gt5-trending-grid">{homeVenues.filter(v=>/restaurant|dining|cafe|coffee|bakery|food/.test(v.category_key||'')).slice(0,4).map(v=><VenueCard key={v.id} venue={v} saved={savedKeys.has(`venue:${v.id}`)} onOpen={()=>openVenue(v)} onSave={()=>toggleSave('venue',v.id)}/>)}</div></Section>
+        <section className="gt5-concierge-banner"><div><span>GOOD PEOPLE. BETTER NIGHTS.</span><h2>Let us plan it for you.</h2><p>Dining · Drinks · Experiences · More</p></div><button onClick={()=>goTab('plan')}>TALK TO CONCIERGE ›</button></section>
+        <Section kicker={today.length?'TONIGHT':'UPCOMING'} title={today.length?'What’s happening':'Next up'}>{(today.length?today:rankedEvents).slice(0,4).map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>)}</Section>
+        {upcomingByCategory.map(group=><Section key={group.key} className="gt5-upcoming-category" kicker="COMING UP" title={cat(group.key)} action={<button onClick={()=>{goTab('places');setQuery(cat(group.key).split(' & ')[0].toLowerCase());setIntent('')}}>Explore</button>}>{group.events.length?group.events.map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>):<p className="gt5-section-note">No upcoming dates verified yet in {cityLabel(city)}. Check back for new listings.</p>}</Section>)}
+        </>}
+      </>}
+
+      {!COMPLETE_UPGRADE&&tab==='places' && (COMPACT_PILOT ? <section className="gt5-screen gt5-discover">
+        <div className="gt-compact-discover-title"><h1>Explore Places</h1><p>Find a place. Make a plan.</p></div>
+        <div className="gt5-discover-search gt-compact-search"><GoodTimesIcon glyph="⌕"/><input aria-label="Search Atlanta places" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search places, neighborhoods…"/>{query&&<button aria-label="Clear search" onClick={()=>setQuery('')}>×</button>}</div>
+        <section className="gt5-taxonomy"><ExploreTaxonomyBrowser compact externalSearch taxonomy={taxonomy} directory={venues} cityName={cityLabel(city)} query={query} onQuery={setQuery} selectedCategory={selectedCategory} selectedSubcategory={selectedSubcategory} onCategory={setSelectedCategory} onSubcategory={setSelectedSubcategory} directoryOpen={directoryOpen} onDirectoryOpen={setDirectoryOpen} mapMode={mapMode} onMapMode={setMapMode} renderVenue={venue=><CompactVenueCard key={venue.id} venue={venue} saved={savedKeys.has(`venue:${venue.id}`)} onOpen={()=>openVenue(venue)} onSave={()=>toggleSave('venue',venue.id)}/>}/></section>
+      </section> : (<section className="gt5-screen gt5-discover"><Hero eyebrow={`EXPLORE ${cityLabel(city).toUpperCase()}`} title="Discover" subtitle="Curated for your good times." image={heroMedia} className="gt5-compact-hero"/>
+        <div className="gt5-discover-search"><span><GoodTimesIcon glyph="⌕"/></span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search venue, neighborhood, category or vibe…"/><button aria-label="Show discovery filters" onClick={()=>document.querySelector('.gt5-secondary-intents')?.scrollIntoView({block:'center',behavior:'smooth'})}>≡</button></div>
+        <div className="gt5-intents">{['All','Restaurants','Nightlife','Events','Entertainment','Hotels','Experiences'].map(label=><button key={label} className={(label==='All'&&!query&&!intent&&!selectedCategory)||(label==='Entertainment'&&selectedCategory==='entertainment')||(intent===label)||(query===normalize(label))?'active':''} onClick={()=>{setSelectedSubcategory(null);setDirectoryOpen(false);if(label==='All'){setQuery('');setIntent('');setSelectedCategory(null)}else if(label==='Entertainment'){setQuery('');setIntent('');setSelectedCategory('entertainment')}else {setSelectedCategory(null);setQuery('');setIntent('');if(label==='Nightlife')setIntent('Late Night');if(label==='Events')setIntent('Tonight');if(label==='Restaurants')setQuery('restaurant');if(label==='Hotels')setQuery('hotel');if(label==='Experiences')setQuery('experience')}}}>{label}</button>)}</div>
+        {!query&&!intent&&!selectedCategory&&!directoryOpen&&<div className="gt5-lanes">{CATEGORY_LANES.map(lane=>{const media=categoryEditorialMedia(lane[3],[],city);return <button key={lane[0]} onClick={()=>activateLane(lane)} style={{'--gt5-lane-image':`url("${media}")`}}><span>{lane[1]}</span><strong>{lane[0]}</strong><small>{lane[2]}</small><i>›</i></button>})}</div>}
+        <div className="gt5-secondary-intents">{INTENTS.map(value=><button className={intent===value?'active':''} key={value} onClick={()=>setIntent(intent===value?'':value)}>{value}</button>)}</div>
+        {(intent||query)&&<><Section kicker="LIVE EXPERIENCES" title={`${filteredEvents.length} matches`}>{filteredEvents.slice(0,8).map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>)}</Section>{filteredVenues.length>0&&<Section kicker="PLACES" title={`${filteredVenues.length} matches`}>{filteredVenues.slice(0,8).map(v=><VenueCard key={v.id} venue={v} saved={savedKeys.has(`venue:${v.id}`)} onOpen={()=>openVenue(v)} onSave={()=>toggleSave('venue',v.id)}/>)}</Section>}</>}
+        {selectedCategory==='entertainment'&&<Section kicker="WHAT'S ON" title="Entertainment happening now">{entertainmentEvents.length?entertainmentEvents.map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>):<p className="gt5-section-note">No dated Entertainment events are verified right now. Browse current places below.</p>}</Section>}
+        <AdSlot placement="discover_inline" city={city}/>
+        <section className="gt5-taxonomy"><ExploreTaxonomyBrowser externalSearch taxonomy={taxonomy} directory={venues} cityName={cityLabel(city)} query={query} onQuery={setQuery} selectedCategory={selectedCategory} selectedSubcategory={selectedSubcategory} onCategory={setSelectedCategory} onSubcategory={setSelectedSubcategory} directoryOpen={directoryOpen} onDirectoryOpen={setDirectoryOpen} mapMode={mapMode} onMapMode={setMapMode} renderVenue={venue=><VenueCard key={venue.id} venue={venue} saved={savedKeys.has(`venue:${venue.id}`)} onOpen={()=>openVenue(venue)} onSave={()=>toggleSave('venue',venue.id)}/>} /></section>
+      </section>))}
+
+      {!COMPLETE_UPGRADE&&tab==='plan'&&<section className="gt5-screen gt5-plan"><Hero eyebrow={cityLabel(city).toUpperCase()} title="Plan" accent="My Night." subtitle="Let us handle the details." image={heroMedia} className="gt5-compact-hero"/>
+        <div className="gt5-plan-mode"><button className={planMode==='ai'?'active':''} onClick={()=>setPlanMode('ai')}><b><GoodTimesIcon glyph="✦"/></b><span><strong>AI Concierge</strong><small>Personalized by GOOD TIMES</small></span></button><button className={planMode==='custom'?'active':''} onClick={()=>setPlanMode('custom')}><b><GoodTimesIcon glyph="≡"/></b><span><strong>Custom Plan</strong><small>You’re in control</small></span></button></div>
+        {planMode==='ai'&&<><section className="gt5-plan-builder"><header><h2>What are you in the mood for tonight?</h2><small>Pick your starting vibe</small></header><div className="gt5-plan-intents">{PLAN_INTENTS.map(([id,icon,label])=><button key={id} className={planIntent===id?'active':''} aria-pressed={planIntent===id} style={{'--gt5-mood-art':`url("${categoryEditorialMedia(id==='music'?'live music':id==='turnup'?'nightlife':id==='different'||id==='open'?'experience':'dining',[],city)}")`}} onClick={()=>choosePlanIntent(id,label)}><b><GoodTimesIcon glyph={icon}/></b><span>{label}</span></button>)}</div><div className="gt5-plan-basics"><label>When<select value={planWhen} onChange={e=>setPlanWhen(e.target.value)}>{[...new Set(['Tonight','Tomorrow','This weekend',planWhen])].map(v=><option key={v}>{v}</option>)}</select></label><label>People<select value={planPeople} onChange={e=>setPlanPeople(e.target.value)}>{['1','2','3','4','5','6','8','10+'].map(v=><option key={v}>{v}</option>)}</select></label><label>Budget / person<select value={planBudget} onChange={e=>setPlanBudget(e.target.value)}>{['Any budget','Under $50','$50–$100','$100–$200','Premium'].map(v=><option key={v}>{v}</option>)}</select></label></div><p className="gt5-plan-recap" aria-live="polite">{planWhen} · {planPeople} {planPeople==='1'?'person':'people'} · {planBudget}</p><label className="gt5-plan-text"><span><GoodTimesIcon glyph="✎"/></span><textarea value={conciergeText} onChange={e=>setConciergeText(e.target.value)} aria-label="Describe your night" placeholder="Tell us your vibe, budget, occasion, neighborhood or anything else…" maxLength={500}/><small>{conciergeText.length}/500</small></label>{conciergeBusy&&<p className="gt5-working">Checking verified inventory, timing and fit…</p>}{conciergeMessage&&<blockquote>{conciergeMessage}</blockquote>}</section>
+        <div className="gt5-popular"><header><h3>Popular requests in {cityLabel(city)}</h3></header><div>{['Birthday celebration','Rooftop cocktails','Dinner & club','Live jazz','Girls night out'].map(p=><button key={p} onClick={()=>setConciergeText(`${p} in ${cityLabel(city)}.`)}>{p}</button>)}</div></div>
+        <button className="gt5-build" disabled={conciergeBusy||!conciergeText.trim()} onClick={()=>void runConcierge(`${conciergeText} When: ${planWhen}. Group: ${planPeople}. Budget per person: ${planBudget}. Use current verified places and events; include a timed sequence and flag unverified prices or availability.`,'itinerary')}>✦ <strong>Build my night</strong> →</button></>}
+        {planMode==='custom'&&<details className="gt5-guided" open><summary>Fine-tune with the guided builder</summary><BuildMyNightPanel cityName={cityLabel(city)} busy={conciergeBusy} onBuild={prompt=>{setConciergeText(prompt);void runConcierge(prompt,'itinerary')}}/></details>}
+        <ShakeRestaurantPanel key={city} city={city} cityName={cityLabel(city)} session={session} venues={homeVenues} onOpen={openVenue} onBuild={venue=>{setPlanMode('ai');setConciergeText(`Build my night around ${venue.name} in ${cityLabel(city)}.`);document.querySelector('.gt5-main')?.scrollTo({top:0,behavior:'smooth'})}}/>
+        <AdSlot placement="concierge_inline" city={city}/>
+
+        {conciergeResult?.events?.length>0&&<Section kicker="CONCIERGE PICKS" title="Events that fit">{conciergeResult.events.slice(0,5).map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>)}</Section>}
+        {conciergeResult?.venues?.length>0&&<Section kicker="CONCIERGE PICKS" title="Places that fit">{conciergeResult.venues.slice(0,5).map(v=><VenueCard key={v.id} venue={v} saved={savedKeys.has(`venue:${v.id}`)} onOpen={()=>openVenue(v)} onSave={()=>toggleSave('venue',v.id)}/>)}</Section>}
+      </section>}
+
+      {!COMPLETE_UPGRADE&&tab==='saved'&&<section className="gt5-screen gt5-saved"><Hero eyebrow="YOUR SAVED" title="Everything" accent="you kept." subtitle="Places, plans, and moments ahead." image={heroMedia} className="gt5-compact-hero"/>
+        <div className="gt5-segments"><button className={savedView==='plans'?'active':''} onClick={()=>setSavedView('plans')}>Plans <b>{plans.length}</b></button><button className={savedView==='saved'?'active':''} onClick={()=>setSavedView('saved')}>Saved <b>{saved.length}</b></button></div><AdSlot placement="saved_partner" city={city}/>
+        {savedView==='plans'&&(plans.length?<div className="gt5-plan-list">{plans.map(p=><button key={p.id} onClick={()=>setSelectedPlan(p)}><span>{String(p.status||'draft').toUpperCase()}</span><h2>{p.itinerary_date&&daysAway(p.itinerary_date,p.city_id||city,clockNow)!==0?String(p.name||'My night out').replace(/\btonight\b/gi,fmtDate(p.itinerary_date)):p.name||`${cityLabel(p.city_id||city)} Night Out`}</h2><p>{fmtLongDate(p.itinerary_date)} · {cityLabel(p.city_id||city)} · {(p.stops||[]).length} stops</p><div>{(p.stops||[]).slice(0,4).map((s,i)=><i key={`${s.id||s.name}-${i}`}><b>{i+1}</b><em>{s.name}</em></i>)}</div><strong>View Plan ›</strong></button>)}</div>:<Empty title="No plans yet" body="Tell GOOD TIMES the night you want and your plan will live here." action={<button className="gt5-primary" onClick={()=>goTab('plan')}>Build a plan</button>}/>) }
+        {savedView==='saved'&&(saved.length?<><Section kicker="SAVED EVENTS" title={`${events.filter(e=>savedKeys.has(`event:${e.event_key}`)).length} experiences`}>{events.filter(e=>savedKeys.has(`event:${e.event_key}`)).map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>)}</Section><Section kicker="SAVED PLACES" title={`${venues.filter(v=>savedKeys.has(`venue:${v.id}`)).length} places`}>{venues.filter(v=>savedKeys.has(`venue:${v.id}`)).map(v=><VenueCard key={v.id} venue={v} saved onOpen={()=>openVenue(v)} onSave={()=>toggleSave('venue',v.id)}/>)}</Section></>:<Empty title="Nothing saved yet" body="Save places and experiences worth remembering." action={<button className="gt5-primary" onClick={()=>goTab('places')}>Explore Places</button>}/>) }
+      </section>}
+
+      {COMPLETE_UPGRADE&&tab==='profile'&&<ProfileHub session={session} profile={profile} intelligence={intelligence} city={city} cityLabel={cityLabel(city)} cityOptions={cityOptions} saved={saved} plans={plans} events={events} venues={venues} onCity={changeCity} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onPlan={setSelectedPlan} onPlaces={()=>goTab('places')} onEntertainment={()=>goTab('entertainment')} onBuild={()=>goTab('plan')} follows={follows} onRadar={()=>goTab('radar')} onPreferences={openPreferences} onAuth={onAuth} onLogout={()=>{clearSession();window.location.reload()}}/>}
+
+      {!COMPLETE_UPGRADE&&tab==='profile'&&<section className="gt5-screen gt5-profile"><Hero eyebrow="MY GOOD TIMES" title={profile?.full_name||session?.user?.user_metadata?.full_name||'Your Good Times'} subtitle={session?'Your plans, saved places, saved entertainment and preferences.':'Browse freely. Sign in when you want to save, follow and personalize.'} image={heroMedia} className="gt5-compact-hero"/>
+        {COMPLETE_UPGRADE&&<CompleteSaved session={session} items={saved} plans={plans} events={events} venues={venues} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onPlan={setSelectedPlan} onExplore={()=>goTab('places')} onEntertainment={()=>goTab('entertainment')} onBuild={()=>goTab('plan')}/>}
+        <section className="gt5-profile-city"><div><span><GoodTimesIcon glyph="⌖"/></span><p><strong>{cityLabel(city)}</strong><small>Your preferred city</small></p></div><select value={city} onChange={e=>void changeCity(e.target.value)}>{cityOptions.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></section>
+        <section className="gt5-member"><span>GOOD PEOPLE<br/>BETTER NIGHTS</span><div><small>{session?'GT MEMBER':'MAKE IT YOURS'}</small><strong>Elevated experiences, everywhere you go.</strong></div></section>
+        {session&&<section className="gt5-watch"><header><span>YOUR TASTE PROFILE</span><strong>{Number(intelligence?.signal_count||0)} signals</strong></header><p>{Number(intelligence?.signal_count||0)>0?`GOOD TIMES is learning from what you view, save, follow and share. Stage: ${String(intelligence?.maturity_stage||'learning').replaceAll('_',' ')}.`:'Start viewing, saving and following experiences. GOOD TIMES will learn what deserves your attention.'}</p></section>}
+        <div className="gt5-profile-menu"><button onClick={openPreferences}><b><GoodTimesIcon glyph="♡"/></b><span><strong>My Preferences</strong><small>{(profile?.vibe_preferences||[]).length?`${profile.vibe_preferences.length} tastes selected`:'Dining, nightlife, events & more'}</small></span><i>›</i></button><button onClick={()=>goTab('radar')}><b><GoodTimesIcon glyph="♢"/></b><span><strong>Notifications & Radar</strong><small>Manage alerts and what GOOD TIMES watches</small></span><i>›</i></button><a href="/privacy.html"><b><GoodTimesIcon glyph="⌾"/></b><span><strong>Privacy & Security</strong><small>Your data, your control</small></span><i>›</i></a><a href="mailto:info@thegoodtimesworldwide.com?subject=GOOD%20TIMES%20Support"><b>?</b><span><strong>Help & Support</strong><small>Get in touch with the concierge team</small></span><i>›</i></a></div>
+        <section className="gt5-support"><div><span>NEED PERSONAL ASSISTANCE?</span><h2>Our concierge team is here for you.</h2></div><a href="mailto:info@thegoodtimesworldwide.com?subject=GOOD%20TIMES%20Concierge">Contact Concierge ›</a></section>
+        {!session&&onAuth&&<button className="gt5-primary gt5-profile-auth" onClick={onAuth}>Sign in or create account</button>}{session&&<button className="gt5-signout" onClick={()=>{clearSession();window.location.reload()}}>Log Out</button>}
+      </section>}
+
+      {tab==='radar'&&<section className="gt5-screen gt5-radar"><button className="gt5-back" onClick={goBack}>← Back</button><Hero eyebrow="GOOD TIMES RADAR" title="Never hear" accent="about it late." subtitle="Real-time alerts for the best nights, before everyone knows." image={heroMedia} className="gt5-compact-hero"/>
+        <section className="gt5-radar-settings"><label><span>ALERT INTENSITY</span><select value={alertPrefs.intensity||'normal'} onChange={e=>void updatePrefs({intensity:e.target.value})}><option value="quiet">Quiet</option><option value="normal">Normal</option><option value="never_miss">Never Miss</option></select></label><div>{[['just_announced','Just announced','Be the first to know.'],['presale','Presales','Get early access.'],['selling_fast','Selling fast',"Popular before they're gone."],['weekend_brief','Weekend brief','A curated Friday-to-Sunday guide.']].map(([key,label,body])=><label key={key}><strong>{label}</strong><small>{body}</small><input type="checkbox" checked={alertPrefs[key]!==false} onChange={e=>void updatePrefs({[key]:e.target.checked})}/></label>)}</div></section>
+        <Section kicker="CITY SIGNALS" title="What needs attention">{radar.length?radar.map(r=><EventCard city={city} now={clockNow} key={`${r.label}-${r.item.event_key}`} event={r.item} saved={savedKeys.has(`event:${r.item.event_key}`)} onOpen={()=>openEvent(r.item)} onSave={()=>toggleSave('event',r.item.event_key)}/>):<Empty title="Radar is quiet" body="Follow events and places you care about. GOOD TIMES will watch them here."/>}</Section>
+        {alerts.length>0&&<section className="gt5-alert-list"><span>YOUR ALERTS</span>{alerts.slice(0,10).map(a=><article key={a.id}><small>{String(a.alert_type||'alert').replaceAll('_',' ')}</small><strong>{a.title}</strong>{a.body&&<p>{a.body}</p>}</article>)}</section>}
+        <section className="gt5-watch"><header><span>WE MONITOR WHAT MATTERS.</span><strong>{follows.length} followed</strong></header>{follows.length?follows.map(f=><div key={`${f.entity_type}:${f.entity_id}`}><span><strong>{f.metadata?.name||`${f.entity_type}: ${f.entity_id}`}</strong><small>{f.city_slug||cityLabel(city)}</small></span><em>{f.alert_level||'normal'}</em></div>):<p>Use Follow + alerts on any event or place to add it here.</p>}</section>
+      </section>}
+    </main>
+
+    <nav className="gt5-nav" aria-label="GOOD TIMES primary navigation">{NAV.map(([id,icon,label])=><button key={id} className={`${tab===id?'active':''} ${id==='plan'?'plan':''}`} onClick={()=>goTab(id)}><span><GoodTimesIcon glyph={icon}/></span><small>{label}</small></button>)}</nav>
+
+    {weeklyOpen&&<ThisWeekOverlay city={city} events={week} venues={homeVenues} onClose={()=>setWeeklyOpen(false)} onEvent={openEvent} onVenue={openVenue} onExplore={()=>{goTab('places');setIntent('');setQuery('')}}/>}
+
+    {preferencesOpen&&<div className="gt5-overlay"><article className="gt5-detail"><button className="gt5-detail-back" onClick={()=>setPreferencesOpen(false)}>←</button><div className="gt5-detail-body"><small>YOUR GOOD TIMES</small><h1>What should we know?</h1><p className="gt5-detail-meta">Choose up to five. These choices combine with what you actually view, save, follow and share.</p><section><span>CHOOSE UP TO FIVE</span><div className="gt5-secondary-intents">{VIBE_OPTIONS.map(option=><button key={option.id} className={preferenceDraft.includes(option.id)?'active':''} aria-pressed={preferenceDraft.includes(option.id)} onClick={()=>togglePreference(option.id)}>{option.icon} {option.label}</button>)}</div></section><section><span>HOW PERSONALIZATION WORKS</span><p>Your selected tastes guide discovery. GOOD TIMES then learns from your real behavior, while verified city headlines can still outrank personal taste when they matter.</p></section><div className="gt5-detail-actions"><button onClick={()=>setPreferenceDraft([])}>Clear</button><button className="primary" disabled={preferenceSaving} onClick={()=>void savePreferences()}>{preferenceSaving?'Saving…':'Save Preferences'}</button></div></div></article></div>}
+
+    {!COMPLETE_UPGRADE&&selectedEvent&&<div className="gt5-overlay"><article className="gt5-detail"><button className="gt5-detail-back" onClick={()=>setSelectedEvent(null)}>←</button>{safeMedia(selectedEvent.image_url)?<img className="gt5-detail-hero" src={safeMedia(selectedEvent.image_url)} alt=""/>:<div className="gt5-detail-hero gt5-detail-fallback"><AppMark/></div>}<div className="gt5-detail-gradient"/><div className="gt5-detail-body"><small>{cityLabel(city).toUpperCase()} · {cat(selectedEvent.category_key)}</small><h1>{selectedEvent.title}</h1><p className="gt5-detail-meta">{fmtDate(selectedEvent.event_date)} · {fmtTime(selectedEvent.event_time)} · {selectedEvent.venue_name||'Location TBA'}</p><section><span>GOOD TIMES TAKE</span><p>{selectedEvent.reasons?.[0]||'This made the current shortlist based on timing, quality and current recommendation signals.'}</p></section><section><span>TRUST & SOURCE</span><p>{selectedEvent.is_verified?'Verified by GOOD TIMES':'Source-backed listing'}{selectedEvent.source_name?` · ${selectedEvent.source_name}`:''}{freshnessLabel(selectedEvent.updated_at)?` · ${freshnessLabel(selectedEvent.updated_at)}`:''}</p>{selectedEvent.source_url&&<a href={selectedEvent.source_url} target="_blank" rel="noreferrer">View source ↗</a>}</section><div className="gt5-detail-actions"><button onClick={()=>toggleSave('event',selectedEvent.event_key)}>{savedKeys.has(`event:${selectedEvent.event_key}`)?'Saved ✓':'Save'}</button><button onClick={()=>toggleFollow('event',selectedEvent)}>{followKeys.has(`event:${selectedEvent.event_key}`)?'Following ✓':'Follow + alerts'}</button><button onClick={()=>void shareExperience('event',selectedEvent)}>Share</button>{selectedEvent.ticket_url&&<a href={selectedEvent.ticket_url} target="_blank" rel="noreferrer">Check Tickets</a>}<button className="primary" onClick={()=>{const p=`Build my night around ${selectedEvent.title} at ${selectedEvent.venue_name||'this venue'} on ${fmtDate(selectedEvent.event_date)}.`;setPlanWhen(selectedEvent.event_date||'Tonight');setPlanMode('ai');setSelectedEvent(null);goTab('plan');setConciergeText(p)}}>Plan around this ✦</button></div></div></article></div>}
+
+    {!COMPLETE_UPGRADE&&selectedVenue&&<div className="gt5-overlay"><article className="gt5-detail"><button className="gt5-detail-back" onClick={()=>setSelectedVenue(null)}>←</button>{safeMedia(selectedVenue.hero_image)?<img className="gt5-detail-hero" src={safeMedia(selectedVenue.hero_image)} alt=""/>:<div className="gt5-detail-hero gt5-detail-fallback"><AppMark/></div>}<div className="gt5-detail-gradient"/><div className="gt5-detail-body"><small>{cityLabel(city).toUpperCase()}</small><h1>{selectedVenue.name}</h1>{COMPACT_PILOT&&<div className="gt-compact-detail-quick"><button onClick={()=>toggleSave('venue',selectedVenue.id)}>{savedKeys.has(`venue:${selectedVenue.id}`)?'Saved ✓':'Save place'}</button><button className="primary" onClick={()=>{const p=`Plan a complete night that includes ${selectedVenue.name} in ${selectedVenue.neighborhood||cityLabel(city)}.`;setSelectedVenue(null);goTab('plan');setConciergeText(p)}}>Plan a night here ↗</button></div>}<p className="gt5-detail-meta">{[selectedVenue.google_rating?`★ ${Number(selectedVenue.google_rating).toFixed(1)}`:null,selectedVenue.price_range,cat(selectedVenue.category_key)].filter(Boolean).join(' · ')}</p><div className="gt5-pills">{[selectedVenue.subcategory,selectedVenue.dress_code,selectedVenue.reservation_req,selectedVenue.neighborhood].filter(Boolean).slice(0,4).map(x=><span key={x}>{x}</span>)}</div>{(selectedVenue.address||selectedVenue.hours_summary)&&<div className="gt5-fact-row">{selectedVenue.address&&<p><b><GoodTimesIcon glyph="⌖"/></b>{selectedVenue.address}</p>}{selectedVenue.hours_summary&&<p><b><GoodTimesIcon glyph="◷"/></b>{selectedVenue.hours_summary}</p>}</div>}<section><p>{(selectedVenue.short_desc&&!/^auto[- ]sourced/i.test(selectedVenue.short_desc)?selectedVenue.short_desc:null)||selectedVenue.insider_tip||'Explore this place and plan your next stop.'}</p></section><section><span>TRUST & SOURCE</span><p>{selectedVenue.is_verified?'Verified place':'Curated place'}{Number(selectedVenue.source_count||0)>0?` · ${selectedVenue.source_count} source${Number(selectedVenue.source_count)===1?'':'s'}`:''}</p>{selectedVenue.website&&<a href={selectedVenue.website} target="_blank" rel="noreferrer">Official website ↗</a>}</section><div className="gt5-detail-actions"><button onClick={()=>toggleSave('venue',selectedVenue.id)}>{savedKeys.has(`venue:${selectedVenue.id}`)?'Saved ✓':'Save'}</button><button onClick={()=>toggleFollow('venue',selectedVenue)}>{followKeys.has(`venue:${selectedVenue.id}`)?'Following ✓':'Follow + alerts'}</button><button onClick={()=>void shareExperience('venue',selectedVenue)}>Share</button>{selectedVenue.booking_link&&<a className="primary" href={selectedVenue.booking_link} target="_blank" rel="noreferrer">Check availability</a>}<button onClick={()=>{const p=`Plan a complete night that includes ${selectedVenue.name} in ${selectedVenue.neighborhood||cityLabel(city)}.`;setSelectedVenue(null);goTab('plan');setConciergeText(p)}}>Plan a night here ✦</button></div></div></article></div>}
+
+    {!COMPLETE_UPGRADE&&selectedPlan&&<div className="gt5-overlay"><article className="gt5-itinerary"><button className="gt5-detail-back" onClick={()=>setSelectedPlan(null)}>←</button><Hero eyebrow="ITINERARY" title="Your Night" accent="Is Ready." subtitle={`${(selectedPlan.stops||[]).length} stops. A better tonight.`} image={heroMedia} className="gt5-itinerary-hero"/><div className="gt5-itinerary-summary"><span><small>{fmtLongDate(selectedPlan.itinerary_date)}</small><strong>{cityLabel(selectedPlan.city_id||city)}</strong></span><button onClick={()=>{setSelectedPlan(null);goTab('plan')}}>✎ Edit Plan</button></div><div className="gt5-timeline">{(selectedPlan.stops||[]).map((s,i)=><section key={`${s.id||s.name}-${i}`}><b>{i+1}</b>{safeMedia(s.image_url||s.image)?<img src={safeMedia(s.image_url||s.image)} alt=""/>:<div className="gt5-stop-fallback"><AppMark/></div>}<div><small>{s.time?fmtTime(s.time):'Time flexible'}</small><h2>{s.name||'GOOD TIMES stop'}</h2><p>{s.role||s.type||'Experience'}</p><em>{s.venue||s.address||''}</em></div>{s.status&&<strong className={`gt5-plan-status ${normalize(s.status).replaceAll(' ','-')}`}>{String(s.status).toUpperCase()}</strong>}</section>)}</div><div className="gt5-plan-services">{[['▰','Transport'],['◎','Invite Friends'],['♢','Bottle Service'],['▱','Hotel'],['••','More']].map(([i,label])=><button key={label} onClick={()=>setToast(`${label} can be coordinated through GOOD TIMES Concierge.`)}><b><GoodTimesIcon glyph={i}/></b><small>{label}</small></button>)}</div><button className="gt5-build" onClick={()=>{if(navigator.share)navigator.share({title:selectedPlan.name||'My GOOD TIMES plan',text:`${cityLabel(selectedPlan.city_id||city)} · ${(selectedPlan.stops||[]).length} stops`}).catch(()=>{});else setToast('Share is available from supported devices.')}}>Share Your Plan ↗</button></article></div>}
+
+
+    {COMPLETE_UPGRADE&&selectedEvent&&<CompleteDetails key={selectedEvent.event_key} item={selectedEvent} kind="event" onClose={()=>setSelectedEvent(null)} saved={savedKeys.has(`event:${selectedEvent.event_key}`)} onSave={()=>toggleSave('event',selectedEvent.event_key)} onPlan={addToPlan} onFollow={()=>toggleFollow('event',selectedEvent)} following={followKeys.has(`event:${selectedEvent.event_key}`)} onEvent={openEvent} savedKeys={savedKeys} saveItem={toggleSave} now={clockNow}/>}
+    {COMPLETE_UPGRADE&&selectedVenue&&!selectedEvent&&<CompleteDetails key={selectedVenue.id} item={selectedVenue} kind="venue" onClose={()=>setSelectedVenue(null)} saved={savedKeys.has(`venue:${selectedVenue.id}`)} onSave={()=>toggleSave('venue',selectedVenue.id)} onPlan={addToPlan} onFollow={()=>toggleFollow('venue',selectedVenue)} following={followKeys.has(`venue:${selectedVenue.id}`)} onEvent={openEvent} savedKeys={savedKeys} saveItem={toggleSave} now={clockNow}/>}
+    {COMPLETE_UPGRADE&&selectedPlan&&<CompleteItinerary key={selectedPlan.id} plan={selectedPlan} session={session} existing={plans.some(p=>p.id===selectedPlan.id)} onClose={()=>setSelectedPlan(null)} onSaved={savedPlan}/>}
+
+    {toast&&<div className="gt5-toast" role="status">{toast}</div>}
+  </div>
+}

@@ -1,0 +1,248 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import { recordProductEvent, recordTasteSignal } from '../intelligence/client.js'
+import { detectShakePlatform, shakeImpulse, shakeThreshold, shouldTriggerShake } from './shake-motion.js'
+import { loadTasteDimensions, tasteGraphBoost } from './shake-personalization.js'
+
+const CUISINES = ['steakhouse','seafood','italian','mexican','caribbean','sushi','asian','soul food','vegan','brunch','coffee']
+const VIBES = ['date night','upscale','casual','romantic','rooftop','late night','groups','hidden gem','live music']
+
+function haystack(venue) {
+  return [venue.subcategory, venue.short_desc, ...(venue.vibe_tags || []), ...(venue.best_for || []), ...(venue.search_tags || []), ...(venue.culture_tags || []), ...(venue.shake_tags || []), ...(venue.amenity_tags || []), ...(venue.dietary_tags || []), ...(venue.ownership_tags || [])].filter(Boolean).join(' ').toLowerCase()
+}
+
+function tasteMetadata(venue, filters = {}) {
+  return {
+    surface: 'shake',
+    cuisine: venue?.subcategory || filters.cuisine || null,
+    price: venue?.price_range || filters.price || null,
+    vibe: filters.vibe || null,
+    vibes: [...new Set([...(venue?.vibe_tags || []), ...(venue?.shake_tags || [])])].slice(0, 12),
+    neighborhood: venue?.neighborhood || null,
+  }
+}
+
+function distanceMiles(a, b) {
+  if (!a || !b || a.latitude == null || a.longitude == null) return null
+  const rad = value => Number(value) * Math.PI / 180
+  const dLat = rad(Number(a.latitude) - Number(b.latitude))
+  const dLon = rad(Number(a.longitude) - Number(b.longitude))
+  const lat1 = rad(Number(b.latitude))
+  const lat2 = rad(Number(a.latitude))
+  const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2)
+  return 3958.8 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
+}
+
+function weightedPick(rows, tasteDimensions = []) {
+  if (!rows.length) return null
+  const weighted = rows.map(row => {
+    const quality = Math.max(0.3, Number(row.quality_score || 50) / 100)
+    const culture = Math.max(0.4, Number(row.culture_score || 50) / 100)
+    const editorial = Math.max(0.25, Number(row.shake_weight || 1))
+    const personalization = tasteGraphBoost(row, tasteDimensions)
+    return { row, weight: Math.max(0.05, quality * 0.55 + culture * 0.25 + editorial * 0.2 + personalization) }
+  })
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0)
+  let cursor = Math.random() * total
+  for (const item of weighted) {
+    cursor -= item.weight
+    if (cursor <= 0) return item.row
+  }
+  return weighted.at(-1)?.row || rows[0]
+}
+
+export default function ShakeRestaurantPanel({ city, cityName, session, onOpen, onBuild, venues = [] }) {
+  const rows = useMemo(() => venues.filter(v => /restaurant|dining|cafe|coffee|bakery|food/.test(String(v.category_key || v.subcategory || '').toLowerCase())), [venues])
+  const [tasteDimensions, setTasteDimensions] = useState([])
+  const loading = false
+  const [result, setResult] = useState(null)
+  const [rolling, setRolling] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [cuisine, setCuisine] = useState('')
+  const [price, setPrice] = useState('')
+  const [vibe, setVibe] = useState('')
+  const [blackOwned, setBlackOwned] = useState(false)
+  const [reservations, setReservations] = useState(false)
+  const [distance, setDistance] = useState('')
+  const [location, setLocation] = useState(null)
+  const [motionReady, setMotionReady] = useState(false)
+  const [status, setStatus] = useState('Shake your phone or tap Pick for me.')
+  const historyRef = useRef([])
+  const revealTimer = useRef(null)
+  const pickingRef = useRef(false)
+  useEffect(() => () => { clearTimeout(revealTimer.current); pickingRef.current = false }, [])
+  const lastShakeRef = useRef(0)
+  const pickRef = useRef(null)
+  const platform = useMemo(() => detectShakePlatform(globalThis.navigator?.userAgent || ''), [])
+  const threshold = useMemo(() => shakeThreshold(platform), [platform])
+
+  useEffect(() => {
+    let active = true
+    loadTasteDimensions(session).then(data => {
+      if (active) setTasteDimensions(data || [])
+    }).catch(() => {})
+    return () => { active = false }
+  }, [session?.access_token, session?.user?.id])
+
+  const filtered = useMemo(() => rows.filter(venue => {
+    const text = haystack(venue)
+    if (cuisine && !text.includes(cuisine)) return false
+    if (price && venue.price_range !== price) return false
+    if (vibe && !text.includes(vibe)) return false
+    if (blackOwned && !venue.is_black_owned && !(venue.ownership_tags || []).includes('black_owned')) return false
+    if (reservations && !venue.reservation_req && !venue.booking_link) return false
+    if (distance && location) {
+      const miles = distanceMiles(venue, location)
+      if (miles == null || miles > Number(distance)) return false
+    }
+    return true
+  }), [rows, cuisine, price, vibe, blackOwned, reservations, distance, location])
+
+  const pick = async source => {
+    if (pickingRef.current || rolling || loading) return
+    if (distance && !location) { setStatus('Enable location to use the distance filter, or choose Anywhere.'); return }
+    const history = new Set(historyRef.current.slice(-8))
+    let pool = filtered.filter(venue => !history.has(venue.id))
+    if (!pool.length) pool = filtered
+    if (!pool.length) {
+      setStatus('No restaurants match those filters. Remove one and shake again.')
+      return
+    }
+    pickingRef.current = true
+    setRolling(true)
+    setStatus(tasteDimensions.length ? 'GOOD TIMES is choosing for you…' : 'GOOD TIMES is choosing…')
+    void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {})
+    revealTimer.current = window.setTimeout(async () => {
+      const chosen = weightedPick(pool, tasteDimensions)
+      historyRef.current = [...historyRef.current, chosen.id].slice(-12)
+      setResult(chosen)
+      setRolling(false)
+      pickingRef.current = false
+      setStatus(tasteDimensions.length ? 'A pick shaped by what you like.' : 'This is the move.')
+      try { await Haptics.impact({ style: ImpactStyle.Heavy }) } catch {}
+      const metadata = tasteMetadata(chosen, { cuisine, price, vibe })
+      recordProductEvent({
+        eventName: 'shake_restaurant_result',
+        surface: 'shake',
+        objectType: 'venue',
+        objectId: chosen.id,
+        city,
+        properties: {
+          source,
+          cuisine,
+          price,
+          vibe,
+          black_owned: blackOwned,
+          reservations,
+          distance_miles: distance || null,
+          candidate_count: pool.length,
+          taste_graph_dimensions: tasteDimensions.length,
+          platform,
+        },
+      }, session)
+      recordTasteSignal({ entityType: 'venue', entityId: chosen.id, signalType: 'shake_result', city, metadata }, session)
+    }, 650)
+  }
+  pickRef.current = pick
+
+  const enableMotion = async () => {
+    try {
+      if (typeof DeviceMotionEvent === 'undefined') {
+        setStatus('Motion sensing is unavailable here. Tap Pick for me instead.')
+        recordProductEvent({ eventName: 'shake_motion_unavailable', surface: 'shake', city, properties: { platform } }, session)
+        return
+      }
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        const permission = await DeviceMotionEvent.requestPermission()
+        if (permission !== 'granted') throw new Error('permission denied')
+      }
+      setMotionReady(true)
+      setStatus('Shake is on. Give your phone a shake.')
+      recordProductEvent({ eventName: 'shake_motion_enabled', surface: 'shake', city, properties: { platform, impulse_threshold: threshold, cooldown_ms: 1400 } }, session)
+    } catch {
+      setStatus('Motion permission was not enabled. Tap Pick for me anytime.')
+      recordProductEvent({ eventName: 'shake_motion_permission_denied', surface: 'shake', city, properties: { platform } }, session)
+    }
+  }
+
+  useEffect(() => {
+    if (!motionReady) return undefined
+    const listener = event => {
+      const impulse = shakeImpulse(event)
+      const now = Date.now()
+      if (shouldTriggerShake({ impulse, threshold, now, lastShakeAt: lastShakeRef.current })) {
+        lastShakeRef.current = now
+        recordProductEvent({
+          eventName: 'shake_motion_detected',
+          surface: 'shake',
+          city,
+          properties: { platform, impulse: Number(impulse.toFixed(2)), impulse_threshold: threshold },
+        }, session)
+        pickRef.current?.('motion')
+      }
+    }
+    window.addEventListener('devicemotion', listener)
+    return () => window.removeEventListener('devicemotion', listener)
+  }, [motionReady, threshold, platform, city, session?.access_token])
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) return setStatus('Location is unavailable on this device.')
+    navigator.geolocation.getCurrentPosition(position => {
+      setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude })
+      setStatus('Distance filtering is ready.')
+      recordProductEvent({ eventName: 'shake_location_enabled', surface: 'shake', city, properties: { platform } }, session)
+    }, () => {
+      setStatus('Location was not enabled. You can keep using city-wide picks.')
+      recordProductEvent({ eventName: 'shake_location_denied', surface: 'shake', city, properties: { platform } }, session)
+    }, { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 })
+  }
+
+  const reject = () => {
+    if (!result) return
+    recordTasteSignal({ entityType: 'venue', entityId: result.id, signalType: 'shake_reject', city, metadata: tasteMetadata(result, { cuisine, price, vibe }) }, session)
+    recordProductEvent({ eventName: 'shake_restaurant_reject', surface: 'shake', objectType: 'venue', objectId: result.id, city, properties: { platform } }, session)
+    pick('reject')
+  }
+
+  const accept = () => {
+    if (!result) return
+    recordTasteSignal({ entityType: 'venue', entityId: result.id, signalType: 'shake_accept', city, metadata: tasteMetadata(result, { cuisine, price, vibe }) }, session)
+    recordProductEvent({ eventName: 'shake_restaurant_accept', surface: 'shake', objectType: 'venue', objectId: result.id, city, properties: { platform } }, session)
+    onOpen(result)
+  }
+
+  return <section className="gt-shake" aria-label="Shake restaurant picker">
+    <div className="gt-shake__head">
+      <div><span>GOOD TIMES SHAKE</span><h2>Where we eating?</h2><p role="status" aria-live="polite">{status}</p></div>
+      <div className={`gt-shake__phone ${rolling ? 'is-rolling' : ''}`} aria-hidden="true">✦</div>
+    </div>
+
+    <div className="gt-shake__actions">
+      <button type="button" className="gt-shake__primary" onClick={() => pick('tap')} disabled={loading || rolling}>{rolling ? 'Choosing…' : 'Pick for me'}</button>
+      <button type="button" onClick={enableMotion}>{motionReady ? 'Shake enabled' : 'Enable phone shake'}</button>
+      <button type="button" onClick={() => setFiltersOpen(value => !value)}>{filtersOpen ? 'Hide filters' : 'Add filters'}</button>
+    </div>
+
+    {filtersOpen && <div className="gt-shake__filters">
+      <label>Cuisine<select value={cuisine} onChange={event => setCuisine(event.target.value)}><option value="">Anything</option>{CUISINES.map(value => <option key={value} value={value}>{value.replace(/\b\w/g, char => char.toUpperCase())}</option>)}</select></label>
+      <label>Price<select value={price} onChange={event => setPrice(event.target.value)}><option value="">Any price</option><option>$</option><option>$$</option><option>$$$</option><option>$$$$</option></select></label>
+      <label>Vibe<select value={vibe} onChange={event => setVibe(event.target.value)}><option value="">Any vibe</option>{VIBES.map(value => <option key={value} value={value}>{value.replace(/\b\w/g, char => char.toUpperCase())}</option>)}</select></label>
+      <label>Distance<select value={distance} onChange={event => setDistance(event.target.value)}><option value="">Anywhere in {cityName}</option><option value="1">Within 1 mile</option><option value="3">Within 3 miles</option><option value="5">Within 5 miles</option><option value="10">Within 10 miles</option><option value="25">Within 25 miles</option></select></label>
+      {distance && !location && <button type="button" className="gt-shake__location" onClick={requestLocation}>Use my location</button>}
+      <label className="gt-shake__check"><input type="checkbox" checked={blackOwned} onChange={event => setBlackOwned(event.target.checked)}/>Black-owned</label>
+      <label className="gt-shake__check"><input type="checkbox" checked={reservations} onChange={event => setReservations(event.target.checked)}/>Reservations / booking</label>
+      <small>{filtered.length} restaurants match your preferences</small>
+    </div>}
+
+    {result && <article key={result.id} className="gt-shake__result">
+      <div className="gt-shake__image">{result.hero_image ? <img src={result.hero_image} alt=""/> : <div>GT</div>}<span>{tasteDimensions.length ? 'FOR YOU' : 'GOOD TIMES PICK'}</span></div>
+      <div className="gt-shake__copy">
+        <small>{result.subcategory || 'Restaurant'}{result.price_range ? ` · ${result.price_range}` : ''}</small>
+        <h3>{result.name}</h3>
+        <p>{(result.short_desc && !/^auto[- ]sourced/i.test(result.short_desc) ? result.short_desc : null) || `${result.name} is your GOOD TIMES pick in ${result.neighborhood || cityName}.`}</p>
+        <div className="gt-shake__facts"><span>{result.neighborhood || cityName}</span>{result.google_rating ? <span>★ {Number(result.google_rating).toFixed(1)}</span> : null}{result.is_black_owned ? <span>Black-owned</span> : null}</div>
+        <div className="gt-shake__result-actions"><button type="button" className="gt-shake__primary" onClick={accept}>Let’s go</button><button type="button" disabled={rolling} onClick={() => pick('reshake')}>Shake again</button><button type="button" disabled={rolling} onClick={reject}>Not my vibe</button>{onBuild&&<button type="button" onClick={()=>onBuild(result)}>Build a night around this ↗</button>}</div>
+      </div>
+    </article>}
+  </section>
+}
