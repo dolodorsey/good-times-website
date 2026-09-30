@@ -3,7 +3,7 @@
 Public WEB forms with all submissions intercepted. No real requests, emails, SMS or customer rows created.
 
 - PASS: 1440 join: complete form and invalid-submit protection
-- FAIL: 1440 join: usable scrolling, valid fields and recoverable error — Submit must scroll into usable viewport
+- PASS: 1440 join: usable scrolling, valid fields and recoverable error
 - PASS: 1440 join: retry submits once with correct type and no implicit SMS consent
 - PASS: 1440 concierge-request: complete form and invalid-submit protection
 - PASS: 1440 concierge-request: usable scrolling, valid fields and recoverable error

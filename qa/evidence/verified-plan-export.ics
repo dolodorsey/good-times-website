@@ -3,19 +3,19 @@ VERSION:2.0
 PRODID:-//GOOD TIMES//Experience Plan//EN
 CALSCALE:GREGORIAN
 BEGIN:VEVENT
-UID:3694df24-2bf6-4967-85c3-db7cf4f50d84-0@thegoodtimesworldwide.com
+UID:b8586783-e0e0-44b8-ad01-fad7de7369ca-0@thegoodtimesworldwide.com
 DTSTAMP:20260927T200000Z
 DTSTART;TZID=America/New_York:20260927T190000
-SUMMARY:Revel Atlanta
+SUMMARY:Opium
 LOCATION:Test address\, Atlanta
-DESCRIPTION:GOOD TIMES suggestion — not a reservation. https://example.test/venue/1
+DESCRIPTION:GOOD TIMES suggestion — not a reservation. https://example.test/venue/0
 END:VEVENT
 BEGIN:VEVENT
-UID:3694df24-2bf6-4967-85c3-db7cf4f50d84-1@thegoodtimesworldwide.com
+UID:b8586783-e0e0-44b8-ad01-fad7de7369ca-1@thegoodtimesworldwide.com
 DTSTAMP:20260927T200000Z
 DTSTART;TZID=America/New_York:20260927T203000
-SUMMARY:Utopia
+SUMMARY:A place without reviewed photography
 LOCATION:Test address\, Atlanta
-DESCRIPTION:GOOD TIMES suggestion — not a reservation. https://example.test/venue/2
+DESCRIPTION:GOOD TIMES suggestion — not a reservation. https://example.test/venue/5
 END:VEVENT
 END:VCALENDAR
