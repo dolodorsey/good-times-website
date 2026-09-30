@@ -42,7 +42,9 @@ export async function shareEvent(event={}){
 
 export async function openLink(url){
   if(!url||typeof window==='undefined')return false;
-  window.open(url,'_blank','noopener,noreferrer');
+  let destination;
+  try { destination=new URL(url,window.location.origin); if(!['http:','https:'].includes(destination.protocol))return false; } catch { return false; }
+  window.open(destination.href,'_blank','noopener,noreferrer');
   return true;
 }
 

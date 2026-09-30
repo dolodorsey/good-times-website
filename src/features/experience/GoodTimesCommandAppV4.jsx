@@ -1,3 +1,5 @@
+import {readWebRoute,writeWebRoute} from './web-navigation.js'
+import './good-times-web-contract.css'
 import {COMPLETE_UPGRADE} from './complete/flag.js'
 import {Home as CompleteHome,EventCollection,Sports as CompleteSports} from './complete/Collections.jsx'
 import CompletePlanner,{Itinerary as CompleteItinerary} from './complete/Planner.jsx'
@@ -223,7 +225,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
   useEffect(()=>{let live=true;const sync=async()=>{const result=await refreshStoredSession().catch(()=>({session:readSession()}));if(!live)return;const next=result?.session||readSession();setSession(current=>current?.access_token===next?.access_token&&current?.expires_at===next?.expires_at?current:next)};void sync();const timer=window.setInterval(()=>void sync(),30000);const focus=()=>void sync();const visibility=()=>{if(document.visibilityState==='visible')void sync()};window.addEventListener('focus',focus);document.addEventListener('visibilitychange',visibility);return()=>{live=false;window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',visibility)}},[])
   useEffect(()=>{const tick=()=>setClockNow(Date.now());const timer=window.setInterval(tick,60000);document.addEventListener('visibilitychange',tick);window.addEventListener('focus',tick);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',tick);window.removeEventListener('focus',tick)}},[])
   const[profile,setProfile]=useState(null),[intelligence,setIntelligence]=useState(null),[events,setEvents]=useState([]),[venues,setVenues]=useState([]),[taxonomy,setTaxonomy]=useState([]),[saved,setSaved]=useState([]),[plans,setPlans]=useState([])
-  const[city,setCity]=useState('atlanta'),[tab,setTab]=useState('home'),[loading,setLoading]=useState(true),[query,setQuery]=useState(''),[intent,setIntent]=useState('')
+  const[city,setCity]=useState('atlanta'),[tab,setTab]=useState(()=>readWebRoute().tab),[loading,setLoading]=useState(true),[query,setQuery]=useState(''),[intent,setIntent]=useState('')
   const[selectedEvent,setSelectedEvent]=useState(null),[selectedVenue,setSelectedVenue]=useState(null),[selectedPlan,setSelectedPlan]=useState(null),[toast,setToast]=useState('')
   const[selectedCategory,setSelectedCategory]=useState(null),[selectedSubcategory,setSelectedSubcategory]=useState(null),[directoryOpen,setDirectoryOpen]=useState(false),[mapMode,setMapMode]=useState(false)
   const[planWhen,setPlanWhen]=useState('Tonight'),[planBudget,setPlanBudget]=useState('Any budget'),[planPeople,setPlanPeople]=useState('2')
@@ -234,6 +236,14 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
   const[collection,setCollection]=useState(null),[planAnchor,setPlanAnchor]=useState(null),[contentError,setContentError]=useState(''),[globalQuery,setGlobalQuery]=useState('')
   const saveInFlight=useRef(new Set())
   const returnTab=useRef('home')
+
+  // Browser history is independent from the native app's navigation.
+  useEffect(()=>{
+    const restore=()=>{const route=readWebRoute();setTab(route.tab);setCollection(null);setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setMapMode(false);setQuery('');setGlobalQuery('');setSelectedEvent(null);setSelectedVenue(null);setSelectedPlan(null);setPreferencesOpen(false);setWeeklyOpen(false)};
+    window.addEventListener('popstate',restore);
+    return()=>window.removeEventListener('popstate',restore);
+  },[])
+ 
 
   useEffect(()=>{document.body.classList.add('gt-app-mode','gt5-mode');return()=>{document.body.classList.remove('gt-app-mode','gt5-mode')}},[])
   const refresh=useCallback(async nextCity=>{setLoading(true);setContentError('');const taxonomyPromise=loadExploreTaxonomy().catch(()=>[]);try{const[e,v]=await Promise.all([(COMPLETE_UPGRADE?loadCanonicalEvents(nextCity,{limit:80,throwOnError:true}):loadCanonicalEvents(nextCity,{limit:80})).catch(error=>{if(COMPLETE_UPGRADE)setContentError(error.message||'Events could not refresh.');return []}),loadCanonicalVenues(nextCity,{limit:120}).catch(error=>{if(COMPLETE_UPGRADE)setContentError(error.message||'Places could not refresh.');return []})]);const hardened=hardenDisplayInventory(COMPLETE_UPGRADE?correctDisplayEvents(e||[]):e||[],withReviewedVenueMedia(v||[]));setEvents(hardened.events);setVenues(hardened.venues)}finally{setLoading(false)}void taxonomyPromise.then(t=>setTaxonomy(t||[]))},[])
@@ -298,7 +308,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
   }
 
   const runConcierge=async(text=conciergeText,action='recommend')=>{const clean=String(text||'').trim();if(!clean||conciergeBusy)return;setConciergeBusy(true);setConciergeMessage('');void recordTasteSignal({entityType:'category',entityId:clean.slice(0,120),signalType:'concierge_select',city,metadata:{action}},session);try{const result=hardenRecommendationResult(await askGoodTimesConcierge({query:clean,action,city},session));setConciergeResult(result);setConciergeMessage(result?.message||'Here are the strongest current options.');if(result?.itinerary){setPlans(rows=>[result.itinerary,...rows.filter(x=>x.id!==result.itinerary.id)]);setSelectedPlan(result.itinerary);setToast('Your night is ready.')}}catch(error){setConciergeMessage(error.message||'I could not verify a strong answer from current data.')}finally{setConciergeBusy(false)}}
-  const goTab=id=>{if(COMPLETE_UPGRADE)setCollection(null);if(id==='radar'){returnTab.current=PRIMARY_TABS.has(tab)?tab:'home'}setTab(id);if(id==='places'){setQuery('');setIntent('');setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setMapMode(false)}if(id!=='places'){setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false)}document.querySelector('.gt5-main')?.scrollTo?.({top:0,behavior:'instant'})}
+  const goTab=id=>{writeWebRoute(id);if(COMPLETE_UPGRADE)setCollection(null);if(id==='radar'){returnTab.current=PRIMARY_TABS.has(tab)?tab:'home'}setTab(id);if(id==='places'){setQuery('');setIntent('');setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setMapMode(false)}if(id!=='places'){setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false)}document.querySelector('.gt5-main')?.scrollTo?.({top:0,behavior:'instant'})}
   const goBack=()=>{if(tab==='radar'){goTab(returnTab.current||'home');return}if(tab==='search'){goTab('home');return}if(tab==='places'&&directoryOpen){setDirectoryOpen(false);setSelectedSubcategory(null);return}if(tab==='places'&&selectedCategory){setSelectedCategory(null);setSelectedSubcategory(null);return}if(tab==='entertainment'&&collection){setCollection(null);return}goTab('home')}
   const choosePlanIntent=(id,label)=>{setPlanIntent(id);setConciergeText(label==='I\'m open'?`Surprise me with a high-quality night in ${cityLabel(city)}.`:`${label} in ${cityLabel(city)}.`)}
   const activateLane=lane=>{const[, ,label,search]=lane;setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false);setQuery(search);setIntent(label==='Nightlife'?'Late Night':label==='Concerts & Live Music'?'Live Music':'');}
@@ -395,7 +405,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
       </section>}
     </main>
 
-    <nav className="gt5-nav" aria-label="GOOD TIMES primary navigation">{NAV.map(([id,icon,label])=><button key={id} className={`${tab===id?'active':''} ${id==='plan'?'plan':''}`} onClick={()=>goTab(id)}><span><GoodTimesIcon glyph={icon}/></span><small>{label}</small></button>)}</nav>
+    <nav className="gt5-nav" aria-label="GOOD TIMES primary navigation">{NAV.map(([id,icon,label])=><button key={id} className={`${tab===id?'active':''} ${id==='plan'?'plan':''}`} aria-current={tab===id?'page':undefined} onClick={()=>goTab(id)}><span><GoodTimesIcon glyph={icon}/></span><small>{label}</small></button>)}</nav>
 
     {weeklyOpen&&<ThisWeekOverlay city={city} events={week} venues={homeVenues} onClose={()=>setWeeklyOpen(false)} onEvent={openEvent} onVenue={openVenue} onExplore={()=>{goTab('places');setIntent('');setQuery('')}}/>}
 

@@ -27,6 +27,7 @@ import './features/experience/good-times-customer-enhancements.css'
 import './features/experience/good-times-approved-ui-standard.css'
 import './features/experience/good-times-founder-v4-restore.css'
 import './features/experience/good-times-desktop-web.css'
+import './features/experience/good-times-web-contract.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { consumeOAuthRedirect, readSession, storeSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent, recordSignupComplete } from './growth.js'
@@ -40,6 +41,8 @@ const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
 const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativeBridge.jsx'))
+
+document.body.classList.add('gt-web-mode')
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
