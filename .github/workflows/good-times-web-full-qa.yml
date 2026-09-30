@@ -6,7 +6,10 @@ on:
     paths:
       - '.github/workflows/good-times-web-full-qa.yml'
       - 'scripts/web-full-qa.mjs'
+      - 'scripts/web-account-qa.mjs'
       - 'scripts/prepare-web-qa.mjs'
+      - 'scripts/refine-web-qa.mjs'
+      - 'scripts/refine-web-auth.mjs'
       - 'src/features/experience/web-navigation.js'
       - 'src/features/experience/good-times-web-contract.css'
 permissions:
@@ -38,15 +41,17 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Restore public assets and apply reviewed WEB-only changes
+      - name: Restore assets and apply reviewed WEB-only fixes
         run: |
           set -euo pipefail
           node scripts/prepare-web-qa.mjs
+          node scripts/refine-web-qa.mjs
+          node scripts/refine-web-auth.mjs
           git config user.name 'GOOD TIMES Web QA'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main.jsx src/native.js src/features/experience/GoodTimesCommandAppV4.jsx package.json public scripts qa/ISOLATION.json
+          git add index.html src package.json public scripts qa/ISOLATION.json qa/reference
           if ! git diff --cached --quiet; then
-            git commit -m 'Complete isolated web assets, browser navigation and full-screen contract'
+            git commit -m 'Repair full-width desktop layout and WEB account interactions'
             git push origin HEAD:web-desktop-v1
           fi
           echo "WEB_TEST_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
@@ -67,6 +72,10 @@ jobs:
         id: browser
         continue-on-error: true
         run: npm run test:web
+      - name: Sign-in signup recovery logout and keyboard QA
+        id: account
+        continue-on-error: true
+        run: node scripts/web-account-qa.mjs
       - name: Save screenshots and detailed test evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -75,25 +84,46 @@ jobs:
           path: qa/evidence
           if-no-files-found: warn
           retention-days: 14
-      - name: Record QA evidence on WEB branch, never the app
+      - name: Prepare reproducible local WEB audit package without credentials
+        if: always()
+        run: |
+          mkdir -p /tmp/good-times-web-audit
+          for item in src public api lib components scripts index.html package.json package-lock.json vite.config.js vercel.json dist node_modules; do
+            if test -e "$item"; then cp -a "$item" /tmp/good-times-web-audit/; fi
+          done
+          mkdir -p /tmp/good-times-web-audit/qa
+          if test -d qa/reference; then cp -a qa/reference /tmp/good-times-web-audit/qa/; fi
+          tar -czf /tmp/good-times-web-audit.tgz -C /tmp/good-times-web-audit .
+      - name: Export WEB-only reproducible audit package
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: good-times-web-audit-package-${{ github.run_id }}
+          path: /tmp/good-times-web-audit.tgz
+          retention-days: 3
+      - name: Record evidence on WEB branch only
         if: always()
         run: |
           set -euo pipefail
           test "$GITHUB_REPOSITORY" = 'dolodorsey/good-times-website'
           test "$GITHUB_REF" = 'refs/heads/web-desktop-v1'
           if test -f qa/evidence/REPORT.md; then cat qa/evidence/REPORT.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if test -f qa/evidence/ACCOUNT_REPORT.md; then cat qa/evidence/ACCOUNT_REPORT.md >> "$GITHUB_STEP_SUMMARY"; fi
           if test -d qa/evidence; then
             git add qa/evidence
             if ! git diff --cached --quiet; then
               git config user.name 'GOOD TIMES Web QA'
               git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-              git commit -m 'Record full desktop web browser verification evidence'
+              git commit -m 'Record desktop web and account verification evidence'
               git push origin HEAD:web-desktop-v1
             fi
           fi
-      - name: Enforce verification gate
+      - name: Enforce complete verification gate
         if: always()
         env:
           UNIT: ${{ steps.unit.outcome }}
           BROWSER: ${{ steps.browser.outcome }}
-        run: test "$UNIT" = success && test "$BROWSER" = success
+          ACCOUNT: ${{ steps.account.outcome }}
+        run: |
+          test "$UNIT" = success && test "$BROWSER" = success && test "$ACCOUNT" = success
+          node -e "for(const f of ['report.json','account-report.json']){if(!JSON.parse(require('fs').readFileSync('qa/evidence/'+f)).passed)process.exit(1)}"
