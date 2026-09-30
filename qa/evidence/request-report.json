@@ -1,0 +1,116 @@
+{
+  "scope": "Public WEB forms with all submissions intercepted. No real requests, emails, SMS or customer rows created.",
+  "tests": [
+    {
+      "name": "1440 join: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 join: usable scrolling, valid fields and recoverable error",
+      "status": "FAIL",
+      "error": "Submit must scroll into usable viewport"
+    },
+    {
+      "name": "1440 join: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 concierge-request: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 concierge-request: usable scrolling, valid fields and recoverable error",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 concierge-request: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 trip: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 trip: usable scrolling, valid fields and recoverable error",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 trip: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 group: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 group: usable scrolling, valid fields and recoverable error",
+      "status": "PASS"
+    },
+    {
+      "name": "1440 group: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "390 join: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "390 join: usable scrolling, valid fields and recoverable error",
+      "status": "FAIL",
+      "error": "Submit must scroll into usable viewport"
+    },
+    {
+      "name": "390 join: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "390 concierge-request: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "390 concierge-request: usable scrolling, valid fields and recoverable error",
+      "status": "PASS"
+    },
+    {
+      "name": "390 concierge-request: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "390 trip: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "390 trip: usable scrolling, valid fields and recoverable error",
+      "status": "PASS"
+    },
+    {
+      "name": "390 trip: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    },
+    {
+      "name": "390 group: complete form and invalid-submit protection",
+      "status": "PASS"
+    },
+    {
+      "name": "390 group: usable scrolling, valid fields and recoverable error",
+      "status": "PASS"
+    },
+    {
+      "name": "390 group: retry submits once with correct type and no implicit SMS consent",
+      "status": "PASS"
+    }
+  ],
+  "errors": [
+    {
+      "name": "1440 join: usable scrolling, valid fields and recoverable error",
+      "error": "Submit must scroll into usable viewport"
+    },
+    {
+      "name": "390 join: usable scrolling, valid fields and recoverable error",
+      "error": "Submit must scroll into usable viewport"
+    }
+  ],
+  "liveDeliveryVerified": false,
+  "passed": false,
+  "completedAt": "2026-09-30T05:50:56.033Z"
+}

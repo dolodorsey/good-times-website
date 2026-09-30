@@ -1,0 +1,15 @@
+{
+  "width": 834,
+  "scope": "loopback-layout-and-interaction-fixture",
+  "facts": true,
+  "retry": true,
+  "missing": true,
+  "back": true,
+  "order_action": true,
+  "reservation_action": true,
+  "overflow": {
+    "dialog": 0,
+    "body": 0
+  },
+  "errors": []
+}

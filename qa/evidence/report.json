@@ -1,6 +1,6 @@
 {
   "scope": "GOOD TIMES isolated web clone",
-  "sourceCommit": "f16718b5878a6cf8a8949eadd8366ae85916c69d",
+  "sourceCommit": "0e16ecb12c7c7835a1eb591cd69555d65c01b5d9",
   "mobileRepositoryWritten": false,
   "productionDatabaseWritten": false,
   "liveAuthenticationVerified": false,
@@ -334,19 +334,24 @@
       "detail": null
     },
     {
+      "name": "Desktop itinerary editing and export controls",
+      "status": "FAIL",
+      "error": "locator.waitFor: Error: strict mode violation: getByRole('status').filter({ hasText: 'Plan saved.' }) resolved to 2 elements:\n    1) <p role=\"status\" class=\"gtc-note\">Plan saved.</p> aka getByLabel('Your GOOD TIMES itinerary').getByText('Plan saved.')\n    2) <div role=\"status\" class=\"gt5-toast\">Plan saved.</div> aka locator('div').filter({ hasText: /^Plan saved\\.$/ })\n\nCall log:\n  - waiting for getByRole('status').filter({ hasText: 'Plan saved.' }) to be visible\n"
+    },
+    {
       "name": "Failures: a rejected save is not displayed as success",
-      "status": "PASS",
-      "detail": null
+      "status": "FAIL",
+      "error": "locator.click: Timeout 7000ms exceeded.\nCall log:\n  - waiting for locator('.gt5-nav').getByRole('button', { name: 'Entertainment', exact: true })\n    - locator resolved to <button class=\" \">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    13 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
     },
     {
       "name": "Failures: directory error has actionable retry",
-      "status": "PASS",
-      "detail": null
+      "status": "FAIL",
+      "error": "locator.click: Timeout 7000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Refresh places' })\n"
     },
     {
       "name": "Failures: failed plan edit preserves saved plan and retry works",
-      "status": "PASS",
-      "detail": null
+      "status": "FAIL",
+      "error": "locator.click: Timeout 7000ms exceeded.\nCall log:\n  - waiting for locator('.gt5-nav').getByRole('button', { name: 'Profile', exact: true })\n    - locator resolved to <button class=\"active \" aria-current=\"page\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    13 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
     },
     {
       "name": "1920: full Home and real primary navigation",
@@ -682,7 +687,24 @@
     "390-radar.jpg",
     "390-search.jpg"
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Desktop itinerary editing and export controls",
+      "error": "locator.waitFor: Error: strict mode violation: getByRole('status').filter({ hasText: 'Plan saved.' }) resolved to 2 elements:\n    1) <p role=\"status\" class=\"gtc-note\">Plan saved.</p> aka getByLabel('Your GOOD TIMES itinerary').getByText('Plan saved.')\n    2) <div role=\"status\" class=\"gt5-toast\">Plan saved.</div> aka locator('div').filter({ hasText: /^Plan saved\\.$/ })\n\nCall log:\n  - waiting for getByRole('status').filter({ hasText: 'Plan saved.' }) to be visible\n"
+    },
+    {
+      "name": "Failures: a rejected save is not displayed as success",
+      "error": "locator.click: Timeout 7000ms exceeded.\nCall log:\n  - waiting for locator('.gt5-nav').getByRole('button', { name: 'Entertainment', exact: true })\n    - locator resolved to <button class=\" \">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    13 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    {
+      "name": "Failures: directory error has actionable retry",
+      "error": "locator.click: Timeout 7000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Refresh places' })\n"
+    },
+    {
+      "name": "Failures: failed plan edit preserves saved plan and retry works",
+      "error": "locator.click: Timeout 7000ms exceeded.\nCall log:\n  - waiting for locator('.gt5-nav').getByRole('button', { name: 'Profile', exact: true })\n    - locator resolved to <button class=\"active \" aria-current=\"page\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    13 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div role=\"dialog\" aria-modal=\"true\" class=\"gt5-overlay gtc-overlay\" aria-label=\"Your GOOD TIMES itinerary\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    }
+  ],
   "viewports": [
     {
       "screen": "home",
@@ -2738,7 +2760,7 @@
         },
         {
           "src": "https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-cat-mood-date.webp",
-          "loaded": false
+          "loaded": true
         },
         {
           "src": "https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-cat-music.webp",
@@ -16554,8 +16576,8 @@
       "bodyClass": "gt-web-mode gt-app-mode gt5-mode gt-complete-mode"
     }
   ],
-  "completedAt": "2026-09-30T05:40:35.643Z",
-  "passed": true,
-  "passCount": 116,
-  "failCount": 0
+  "completedAt": "2026-09-30T05:50:22.509Z",
+  "passed": false,
+  "passCount": 113,
+  "failCount": 4
 }
