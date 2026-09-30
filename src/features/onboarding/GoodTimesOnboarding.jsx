@@ -149,7 +149,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
           <h2 style={{ fontFamily: SERIF, fontSize: 34, margin: '10px 0 4px' }}>{screen === 'forgot' ? 'Reset Password' : mode === 'signup' ? 'Create Account' : 'Welcome Back'}</h2>
         </div>
         {screen === 'forgot' ? <>
-          <input value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" style={field} />
+          <input aria-label="Email address" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" style={field} />
           <button disabled={!emailValid || busy} onClick={async () => {
             setBusy(true); setError(''); setNotice('')
             try { await requestPasswordReset(email.trim()); setNotice('Check your email for the secure reset link.') }
@@ -176,9 +176,9 @@ export default function GoodTimesOnboarding({ onComplete }) {
               <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
             </div>
           </>}
-          {mode === 'signup' && <input value={name} onChange={event => setName(event.target.value)} placeholder="Full name" style={{ ...field, marginBottom: 12 }} />}
-          <input value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" style={{ ...field, marginBottom: 12 }} />
-          <input value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password — 8+ characters" style={field} />
+          {mode === 'signup' && <input aria-label="Full name" autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Full name" style={{ ...field, marginBottom: 12 }} />}
+          <input aria-label="Email address" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" style={{ ...field, marginBottom: 12 }} />
+          <input aria-label="Password" autoComplete={mode==='signin'?'current-password':'new-password'} onKeyDown={event=>{if(event.key==='Enter'&&authValid&&!busy){event.preventDefault();void authenticate()}}} value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password — 8+ characters" style={field} />
           <button disabled={!authValid || busy} onClick={authenticate} style={{ ...primary(authValid && !busy), marginTop: 16 }}>{busy ? 'Opening…' : mode === 'signup' ? 'Create Account' : 'Sign In'}</button>
           {mode === 'signin' && <button onClick={() => { setScreen('forgot'); setError(''); setNotice('') }} style={{ width: '100%', marginTop: 14, background: 'none', border: 0, color: 'rgba(255,255,255,.55)', cursor: 'pointer' }}>Forgot password?</button>}
         </>}

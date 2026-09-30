@@ -72,7 +72,7 @@ test('wrong-entity metadata is discarded without discarding the venue',async()=>
 test('optional enrichment failure leaves base detail and transaction links usable',async()=>{const result=await browse(request,{now,fetcher:async u=>new URL(u).pathname.endsWith('/gt_venues')?json([venue]):new Response('{}',{status:503})});assert.equal(result.ok,true);assert.equal(result.items[0].website,venue.website);assert.equal(result.items[0].restaurant_profile,null);assert.equal(result.items[0].restaurant_profile_state,'unavailable')})
 test('base venue failure remains an error rather than a false empty result',async()=>{await assert.rejects(browse(request,{now,fetcher:async()=>new Response('{}',{status:503})}))})
 test('restaurant detail migration protects public writes and requires current Atlanta venue visibility',()=>{
- const sql=fs.readFileSync('supabase/migrations/20260928091745_good_times_restaurant_detail_rls_v1.sql','utf8')
+ const sql=fs.readFileSync('qa/reference/supabase/migrations/20260928091745_good_times_restaurant_detail_rls_v1.sql','utf8')
  assert.match(sql,/enable row level security/i);assert.match(sql,/revoke all[\s\S]*from public, anon, authenticated/i);assert.match(sql,/for select to anon, authenticated/i)
  assert.match(sql,/city_key = 'atlanta'/);assert.match(sql,/freshness_expires_at > now\(\)/);assert.equal((sql.match(/security_invoker = true/g)||[]).length,2)
  assert.doesNotMatch(sql,/create policy[\s\S]*for (all|insert|update|delete) /i)

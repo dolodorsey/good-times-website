@@ -1,80 +1,96 @@
 /* GOOD TIMES WEB ONLY. Loaded with the current customer interface, after its feature styles.
  * Desktop rules address the current gtc-* screens, not only the retired gt5-* layouts.
  * The native application repository never imports this stylesheet. */
-body.gt-web-mode :where(button,a,input,select,textarea):focus-visible{outline:2px solid #f8d46a!important;outline-offset:4px!important}
-body.gt-web-mode .gt5-nav button[aria-current=page]{color:var(--gt5-gold2,#f8d46a)}
+body#good-times-web.gt-web-mode :where(button,a,input,select,textarea):focus-visible{outline:2px solid #f8d46a!important;outline-offset:4px!important}
+body#good-times-web.gt-web-mode .gt5-nav button[aria-current=page]{color:var(--gt5-gold2,#f8d46a)}
 @media(min-width:1024px){
- html:has(body.gt-web-mode),body.gt-web-mode{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;display:block!important}
- html body.gt-web-mode #root{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;min-height:0!important;transform:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important}
- html body.gt-web-mode #root .gt-premium-experience,html body.gt-web-mode #root .gt-guest-mode{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important}
- html body.gt-web-mode #root .gt5-app{--gt-web-rail:224px;--gt-web-space:32px;width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;border:0!important;border-radius:0!important;display:grid!important;grid-template-columns:var(--gt-web-rail) minmax(0,1fr)!important;grid-template-rows:76px 44px minmax(0,1fr)!important;overflow:hidden!important}
- html body.gt-web-mode #root .gt5-app[data-screen=radar]{grid-template-rows:76px 0 minmax(0,1fr)!important}
- html body.gt-web-mode #root .gt5-topbar{grid-column:1/-1!important;grid-row:1!important;position:relative!important;inset:auto!important;width:100%!important;min-width:0!important;height:76px!important;min-height:76px!important;padding:12px 32px!important}
- html body.gt-web-mode #root .gt5-brand strong{font-size:22px!important}
- html body.gt-web-mode #root .gt5-radar-strip{grid-column:2!important;grid-row:2!important;position:relative!important;inset:auto!important;min-width:0!important;width:100%!important;height:44px!important;min-height:44px!important;padding:0 var(--gt-web-space)!important}
- html body.gt-web-mode #root .gt5-main{grid-column:2!important;grid-row:3!important;position:relative!important;inset:auto!important;min-width:0!important;min-height:0!important;width:100%!important;height:auto!important;max-height:none!important;margin:0!important;padding:0 0 40px!important;overflow:auto!important;scrollbar-width:thin!important;scrollbar-color:#62543a #080a0c!important;scroll-padding:24px!important}
- html body.gt-web-mode #root .gt5-main::-webkit-scrollbar{display:block!important;width:9px!important}
- html body.gt-web-mode #root .gt5-main::-webkit-scrollbar-thumb{background:#62543a;border-radius:10px}
- html body.gt-web-mode #root .gt5-nav{grid-column:1!important;grid-row:2/4!important;position:relative!important;inset:auto!important;transform:none!important;width:var(--gt-web-rail)!important;max-width:none!important;min-height:0!important;height:100%!important;padding:24px 14px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:10px!important;border:0!important;border-right:1px solid rgba(248,212,106,.18)!important;border-radius:0!important;background:#080a0c!important}
- html body.gt-web-mode #root .gt5-nav button{flex:none!important;width:100%!important;min-height:60px!important;height:auto!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;padding:10px 12px!important;border-radius:14px!important}
- html body.gt-web-mode #root .gt5-nav button span{width:36px!important;height:36px!important;min-width:36px!important;margin:0!important;border-radius:11px!important;font-size:20px!important;display:grid!important;place-items:center!important}
- html body.gt-web-mode #root .gt5-nav button small{font-size:12px!important;line-height:1.35!important;white-space:normal!important;margin:0!important}
- html body.gt-web-mode #root .gt5-main>:where(.gtc-home,.gtc-discover,.gtc-entertainment,.gtc-planner,.gtc-profile-hub,.gtc-events,.gtc-sports,.gtc-search-page){box-sizing:border-box!important;width:100%!important;max-width:1600px!important;min-width:0!important;margin:0 auto!important;padding:26px var(--gt-web-space) 40px!important}
- html body.gt-web-mode #root :where(.gtc-grid,.gtc-place-preview .gtc-grid,.gt-compact-results .gtc-grid){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;min-width:0!important}
- html body.gt-web-mode #root .gtc-card{min-width:0!important;max-width:100%!important;min-height:174px!important;border-radius:18px!important}
- html body.gt-web-mode #root .gtc-card h3{font-size:19px!important;line-height:1.2!important;overflow-wrap:anywhere}
- html body.gt-web-mode #root .gtc-card :where(p,small){font-size:12px!important;line-height:1.45!important}
- html body.gt-web-mode #root .gtc-save{min-width:38px!important;min-height:38px!important}
- html body.gt-web-mode #root .gtc-search{max-width:none!important;margin:0 0 20px!important;min-height:56px!important}
- html body.gt-web-mode #root .gtc-search input{font-size:16px!important;min-width:0!important;min-height:48px!important}
- html body.gt-web-mode #root .gtc-page-heading{margin-bottom:22px!important;align-items:center!important;gap:18px!important}
- html body.gt-web-mode #root .gtc-page-heading h1{font-size:38px!important;line-height:1.12!important}
- html body.gt-web-mode #root .gtc-page-heading small{font-size:14px!important;line-height:1.5!important}
- html body.gt-web-mode #root :where(.gtc-tabs,.gtc-profile-tabs){display:flex!important;flex-wrap:wrap!important;gap:8px!important;overflow:visible!important;margin-bottom:22px!important}
- html body.gt-web-mode #root :where(.gtc-tabs,.gtc-profile-tabs) button{min-height:44px!important;padding:10px 18px!important;font-size:13px!important;line-height:1.3!important}
- html body.gt-web-mode #root .gtc-home-utility{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;margin:0 0 22px!important}
- html body.gt-web-mode #root .gtc-home-utility button{min-height:86px!important;padding:18px!important}
- html body.gt-web-mode #root .gtc-home-utility strong{font-size:18px!important}
- html body.gt-web-mode #root .gtc-home-utility small{font-size:12px!important}
- html body.gt-web-mode #root :where(.gtc-entertainment-lanes,.gtc-place-lanes){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;margin:20px 0 28px!important}
- html body.gt-web-mode #root :where(.gtc-entertainment-lane,.gtc-place-lanes>button){min-height:130px!important;padding:22px!important;min-width:0!important}
- html body.gt-web-mode #root :where(.gtc-entertainment-lane,.gtc-place-lanes>button) strong{font-size:24px!important;line-height:1.15!important}
- html body.gt-web-mode #root :where(.gtc-entertainment-lane,.gtc-place-lanes>button) small{font-size:13px!important;line-height:1.45!important}
- html body.gt-web-mode #root :where(.gtc-collection-links,.gtc-team-grid){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
- html body.gt-web-mode #root .gtc-collection-links button{min-height:64px!important;font-size:15px!important}
- html body.gt-web-mode #root :where(.gtc-controls,.gtc-form){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
- html body.gt-web-mode #root :where(.gtc-controls,.gtc-form) :where(input,select){min-height:46px!important;font-size:15px!important;width:100%!important;min-width:0!important}
- html body.gt-web-mode #root .gtc-planner{max-width:1320px!important}
- html body.gt-web-mode #root .gtc-mood-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
- html body.gt-web-mode #root .gtc-mood-grid button{min-height:156px!important;min-width:0!important}
- html body.gt-web-mode #root .gtc-progress{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
- html body.gt-web-mode #root .gtc-progress button{min-height:50px!important;font-size:13px!important}
- html body.gt-web-mode #root .gtc-builder-actions{position:sticky!important;bottom:0!important;inset-inline:auto!important;max-width:none!important;width:100%!important;padding:16px 0!important;background:#090b0e!important;z-index:10!important;gap:16px!important}
- html body.gt-web-mode #root .gtc-builder-actions button{min-height:52px!important;font-size:15px!important}
- html body.gt-web-mode #root :where(.gtc-profile-panel,.gtc-profile-intro){max-width:none!important;margin:0 0 22px!important;padding:24px!important}
- html body.gt-web-mode #root .gtc-profile-intro h1{font-size:36px!important}
- html body.gt-web-mode #root :where(.gtc-note,.gtc-profile-panel p){font-size:14px!important;line-height:1.6!important}
- html body.gt-web-mode #root .gt5-overlay{position:fixed!important;inset:0!important;padding:32px!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;overflow-y:auto!important;background:rgba(2,3,5,.86)!important;z-index:1000!important}
- html body.gt-web-mode #root .gt5-overlay>:where(.gtc-detail,.gtc-itinerary,.gt5-detail,.gt5-itinerary){width:min(100%,1040px)!important;max-width:1040px!important;min-height:0!important;max-height:none!important;margin:0 auto!important;position:relative!important;inset:auto!important;border-radius:24px!important;overflow:visible!important}
- html body.gt-web-mode #root :where(.gtc-detail-copy,.gt5-detail-body){padding:28px!important}
- html body.gt-web-mode #root .gtc-detail-toolbar{position:sticky!important;top:-32px!important;z-index:20!important;padding:16px 24px!important;border-radius:24px 24px 0 0!important;background:#0b0d10!important}
- html body.gt-web-mode #root .gtc-stop-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important}
- html body.gt-web-mode #root .gtc-stop-actions button{min-height:40px!important;padding:8px 14px!important}
- html body.gt-web-mode #root .gt-week-sheet{width:min(1120px,calc(100vw - 64px))!important;max-width:1120px!important}
- html body.gt-web-mode #root .gt5-toast{position:fixed!important;left:50%!important;right:auto!important;bottom:28px!important;transform:translateX(-50%)!important;z-index:1200!important;max-width:calc(100vw - 64px)!important}
+ html:has(body#good-times-web.gt-web-mode),body#good-times-web.gt-web-mode{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;display:block!important}
+ html body#good-times-web.gt-web-mode #root{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;min-height:0!important;transform:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important}
+ html body#good-times-web.gt-web-mode #root .gt-premium-experience,html body#good-times-web.gt-web-mode #root .gt-guest-mode{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important}
+ html body#good-times-web.gt-web-mode #root .gt5-app{--gt-web-rail:224px;--gt-web-space:32px;width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;border:0!important;border-radius:0!important;display:grid!important;grid-template-columns:var(--gt-web-rail) minmax(0,1fr)!important;grid-template-rows:76px 44px minmax(0,1fr)!important;overflow:hidden!important}
+ html body#good-times-web.gt-web-mode #root .gt5-app[data-screen=radar]{grid-template-rows:76px 0 minmax(0,1fr)!important}
+ html body#good-times-web.gt-web-mode #root .gt5-topbar{grid-column:1/-1!important;grid-row:1!important;position:relative!important;inset:auto!important;width:100%!important;min-width:0!important;height:76px!important;min-height:76px!important;padding:12px 32px!important}
+ html body#good-times-web.gt-web-mode #root .gt5-brand strong{font-size:22px!important}
+ html body#good-times-web.gt-web-mode #root .gt5-radar-strip{grid-column:2!important;grid-row:2!important;position:relative!important;inset:auto!important;min-width:0!important;width:100%!important;height:44px!important;min-height:44px!important;padding:0 var(--gt-web-space)!important}
+ html body#good-times-web.gt-web-mode #root .gt5-main{grid-column:2!important;grid-row:3!important;position:relative!important;inset:auto!important;min-width:0!important;min-height:0!important;width:100%!important;height:auto!important;max-height:none!important;margin:0!important;padding:0 0 40px!important;overflow:auto!important;scrollbar-width:thin!important;scrollbar-color:#62543a #080a0c!important;scroll-padding:24px!important}
+ html body#good-times-web.gt-web-mode #root .gt5-main::-webkit-scrollbar{display:block!important;width:9px!important}
+ html body#good-times-web.gt-web-mode #root .gt5-main::-webkit-scrollbar-thumb{background:#62543a;border-radius:10px}
+ html body#good-times-web.gt-web-mode #root .gt5-nav{grid-column:1!important;grid-row:2/4!important;position:relative!important;inset:auto!important;transform:none!important;width:var(--gt-web-rail)!important;max-width:none!important;min-height:0!important;height:100%!important;padding:24px 14px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:10px!important;border:0!important;border-right:1px solid rgba(248,212,106,.18)!important;border-radius:0!important;background:#080a0c!important}
+ html body#good-times-web.gt-web-mode #root .gt5-nav button{flex:none!important;width:100%!important;min-height:60px!important;height:auto!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;padding:10px 12px!important;border-radius:14px!important}
+ html body#good-times-web.gt-web-mode #root .gt5-nav button span{width:36px!important;height:36px!important;min-width:36px!important;margin:0!important;border-radius:11px!important;font-size:20px!important;display:grid!important;place-items:center!important}
+ html body#good-times-web.gt-web-mode #root .gt5-nav button small{font-size:12px!important;line-height:1.35!important;white-space:normal!important;margin:0!important}
+ html body#good-times-web.gt-web-mode #root .gt5-main>:where(.gtc-home,.gtc-discover,.gtc-entertainment,.gtc-planner,.gtc-profile-hub,.gtc-events,.gtc-sports,.gtc-search-page){box-sizing:border-box!important;width:100%!important;max-width:1600px!important;min-width:0!important;margin:0 auto!important;padding:26px var(--gt-web-space) 40px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-grid,.gtc-place-preview .gtc-grid,.gt-compact-results .gtc-grid){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;min-width:0!important}
+ html body#good-times-web.gt-web-mode #root .gtc-card{min-width:0!important;max-width:100%!important;min-height:174px!important;border-radius:18px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-card h3{font-size:19px!important;line-height:1.2!important;overflow-wrap:anywhere}
+ html body#good-times-web.gt-web-mode #root .gtc-card :where(p,small){font-size:12px!important;line-height:1.45!important}
+ html body#good-times-web.gt-web-mode #root .gtc-save{min-width:38px!important;min-height:38px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-search{max-width:none!important;margin:0 0 20px!important;min-height:56px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-search input{font-size:16px!important;min-width:0!important;min-height:48px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-page-heading{margin-bottom:22px!important;align-items:center!important;gap:18px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-page-heading h1{font-size:38px!important;line-height:1.12!important}
+ html body#good-times-web.gt-web-mode #root .gtc-page-heading small{font-size:14px!important;line-height:1.5!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-tabs,.gtc-profile-tabs){display:flex!important;flex-wrap:wrap!important;gap:8px!important;overflow:visible!important;margin-bottom:22px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-tabs,.gtc-profile-tabs) button{min-height:44px!important;padding:10px 18px!important;font-size:13px!important;line-height:1.3!important}
+ html body#good-times-web.gt-web-mode #root .gtc-home-utility{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;margin:0 0 22px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-home-utility button{min-height:86px!important;padding:18px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-home-utility strong{font-size:18px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-home-utility small{font-size:12px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-entertainment-lanes,.gtc-place-lanes){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;margin:20px 0 28px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-entertainment-lane,.gtc-place-lanes>button){min-height:130px!important;padding:22px!important;min-width:0!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-entertainment-lane,.gtc-place-lanes>button) strong{font-size:24px!important;line-height:1.15!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-entertainment-lane,.gtc-place-lanes>button) small{font-size:13px!important;line-height:1.45!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-collection-links,.gtc-team-grid){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-collection-links button{min-height:64px!important;font-size:15px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-controls,.gtc-form){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-controls,.gtc-form) :where(input,select){min-height:46px!important;font-size:15px!important;width:100%!important;min-width:0!important}
+ html body#good-times-web.gt-web-mode #root .gtc-planner{max-width:1320px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-mood-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-mood-grid button{min-height:156px!important;min-width:0!important}
+ html body#good-times-web.gt-web-mode #root .gtc-progress{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-progress button{min-height:50px!important;font-size:13px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-builder-actions{position:sticky!important;bottom:0!important;inset-inline:auto!important;max-width:none!important;width:100%!important;padding:16px 0!important;background:#090b0e!important;z-index:10!important;gap:16px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-builder-actions button{min-height:52px!important;font-size:15px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-profile-panel,.gtc-profile-intro){max-width:none!important;margin:0 0 22px!important;padding:24px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-profile-intro h1{font-size:36px!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-note,.gtc-profile-panel p){font-size:14px!important;line-height:1.6!important}
+ html body#good-times-web.gt-web-mode #root .gt5-overlay{position:fixed!important;inset:0!important;padding:32px!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;overflow-y:auto!important;background:rgba(2,3,5,.86)!important;z-index:1000!important}
+ html body#good-times-web.gt-web-mode #root .gt5-overlay>:where(.gtc-detail,.gtc-itinerary,.gt5-detail,.gt5-itinerary){width:min(100%,1040px)!important;max-width:1040px!important;min-height:0!important;max-height:none!important;margin:0 auto!important;position:relative!important;inset:auto!important;border-radius:24px!important;overflow:visible!important}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-detail-copy,.gt5-detail-body){padding:28px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-detail-toolbar{position:sticky!important;top:-32px!important;z-index:20!important;padding:16px 24px!important;border-radius:24px 24px 0 0!important;background:#0b0d10!important}
+ html body#good-times-web.gt-web-mode #root .gtc-stop-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-stop-actions button{min-height:40px!important;padding:8px 14px!important}
+ html body#good-times-web.gt-web-mode #root .gt-week-sheet{width:min(1120px,calc(100vw - 64px))!important;max-width:1120px!important}
+ html body#good-times-web.gt-web-mode #root .gt5-toast{position:fixed!important;left:50%!important;right:auto!important;bottom:28px!important;transform:translateX(-50%)!important;z-index:1200!important;max-width:calc(100vw - 64px)!important}
 }
 @media(min-width:1360px){
- html body.gt-web-mode #root .gt5-app{--gt-web-rail:240px;--gt-web-space:40px}
- html body.gt-web-mode #root :where(.gtc-grid,.gtc-place-preview .gtc-grid,.gt-compact-results .gtc-grid,.gtc-entertainment-lanes,.gtc-place-lanes){grid-template-columns:repeat(3,minmax(0,1fr))!important}
- html body.gt-web-mode #root .gtc-team-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
- html body.gt-web-mode #root .gtc-collection-links{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ html body#good-times-web.gt-web-mode #root .gt5-app{--gt-web-rail:240px;--gt-web-space:40px}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-grid,.gtc-place-preview .gtc-grid,.gt-compact-results .gtc-grid,.gtc-entertainment-lanes,.gtc-place-lanes){grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ html body#good-times-web.gt-web-mode #root .gtc-team-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+ html body#good-times-web.gt-web-mode #root .gtc-collection-links{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 }
 @media(min-width:1800px){
- html body.gt-web-mode #root .gt5-app{--gt-web-rail:264px;--gt-web-space:48px}
- html body.gt-web-mode #root :where(.gtc-grid,.gtc-place-preview .gtc-grid,.gt-compact-results .gtc-grid){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ html body#good-times-web.gt-web-mode #root .gt5-app{--gt-web-rail:264px;--gt-web-space:48px}
+ html body#good-times-web.gt-web-mode #root :where(.gtc-grid,.gtc-place-preview .gtc-grid,.gt-compact-results .gtc-grid){grid-template-columns:repeat(4,minmax(0,1fr))!important}
 }
 @media(hover:hover) and (pointer:fine) and (min-width:1024px){
- body.gt-web-mode :where(.gtc-card,.gtc-entertainment-lane,.gtc-place-lanes>button){transition:transform .16s,border-color .16s,box-shadow .16s}
- body.gt-web-mode :where(.gtc-card,.gtc-entertainment-lane,.gtc-place-lanes>button):hover{transform:translateY(-2px);border-color:rgba(248,212,106,.65);box-shadow:0 12px 30px #0005}
+ body#good-times-web.gt-web-mode :where(.gtc-card,.gtc-entertainment-lane,.gtc-place-lanes>button){transition:transform .16s,border-color .16s,box-shadow .16s}
+ body#good-times-web.gt-web-mode :where(.gtc-card,.gtc-entertainment-lane,.gtc-place-lanes>button):hover{transform:translateY(-2px);border-color:rgba(248,212,106,.65);box-shadow:0 12px 30px #0005}
 }
-@media(prefers-reduced-motion:reduce){body.gt-web-mode *,body.gt-web-mode *::before,body.gt-web-mode *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+@media(prefers-reduced-motion:reduce){body#good-times-web.gt-web-mode *,body#good-times-web.gt-web-mode *::before,body#good-times-web.gt-web-mode *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* WEB GEOMETRY OVERRIDE V2: a dedicated WEB body id outranks inherited phone/tablet shells. */
+@media(min-width:1024px){
+ html body#good-times-web.gt-web-mode #root,
+ html body#good-times-web.gt-web-mode #root .gt-premium-experience,
+ html body#good-times-web.gt-web-mode #root .gt-guest-mode,
+ html body#good-times-web.gt-web-mode #root .gt5-app{position:relative!important;inset:auto!important;transform:none!important;padding:0!important;box-sizing:border-box!important;max-width:none!important;border-radius:0!important}
+ html body#good-times-web.gt-web-mode #root .gt5-app{width:100vw!important;height:100dvh!important;gap:0!important;grid-template-columns:var(--gt-web-rail) minmax(0,1fr)!important;grid-template-rows:76px 44px minmax(0,1fr)!important}
+ html body#good-times-web.gt-web-mode #root .gt5-app>.gt5-radar-strip{display:grid!important}
+ html body#good-times-web.gt-web-mode #root .gt5-main{width:auto!important;max-width:none!important;max-height:none!important;left:auto!important;right:auto!important;transform:none!important}
+ html body#good-times-web.gt-web-mode #root .gt5-nav{left:auto!important;right:auto!important;transform:none!important}
+ html body#good-times-web.gt-web-mode #root .gtc-plan-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-plan-tile{min-width:0!important;min-height:190px!important;padding:24px!important}
+ html body#good-times-web.gt-web-mode #root .gtc-profile-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
+}
+@media(min-width:1600px){html body#good-times-web.gt-web-mode #root .gtc-plan-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
