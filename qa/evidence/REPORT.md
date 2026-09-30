@@ -1,6 +1,6 @@
 # GOOD TIMES web verification
 
-Passed: 113. Failed: 4.
+Passed: 117. Failed: 0.
 
 Scope: compiled UI, controlled account/content fixtures, actual copied local image assets.
 Live OAuth, production payments, production deployment and live account synchronization are NOT certified by this report.
@@ -71,10 +71,10 @@ No source app repository or production database writes.
 - PASS: 1440: Radar opens and returns via primary navigation
 - PASS: 1440: search submission produces global results
 - PASS: 1440: no browser JavaScript crashes
-- FAIL: Desktop itinerary editing and export controls — locator.waitFor: Error: strict mode violation: getByRole('status').filter({ hasText: 'Plan saved.' }) resolved to 2 elements:
-- FAIL: Failures: a rejected save is not displayed as success — locator.click: Timeout 7000ms exceeded.
-- FAIL: Failures: directory error has actionable retry — locator.click: Timeout 7000ms exceeded.
-- FAIL: Failures: failed plan edit preserves saved plan and retry works — locator.click: Timeout 7000ms exceeded.
+- PASS: Desktop itinerary editing and export controls
+- PASS: Failures: a rejected save is not displayed as success
+- PASS: Failures: directory error has actionable retry
+- PASS: Failures: failed plan edit preserves saved plan and retry works
 - PASS: 1920: full Home and real primary navigation
 - PASS: 1920: local logo and bundled venue images resolve
 - PASS: 1920: Home Tonight / Upcoming / For You controls

@@ -56,8 +56,7 @@
     },
     {
       "name": "390 join: usable scrolling, valid fields and recoverable error",
-      "status": "FAIL",
-      "error": "Submit must scroll into usable viewport"
+      "status": "PASS"
     },
     {
       "name": "390 join: retry submits once with correct type and no implicit SMS consent",
@@ -104,13 +103,9 @@
     {
       "name": "1440 join: usable scrolling, valid fields and recoverable error",
       "error": "Submit must scroll into usable viewport"
-    },
-    {
-      "name": "390 join: usable scrolling, valid fields and recoverable error",
-      "error": "Submit must scroll into usable viewport"
     }
   ],
   "liveDeliveryVerified": false,
   "passed": false,
-  "completedAt": "2026-09-30T05:50:56.033Z"
+  "completedAt": "2026-09-30T05:56:02.792Z"
 }

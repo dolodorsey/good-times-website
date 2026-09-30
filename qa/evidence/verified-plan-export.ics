@@ -1,0 +1,21 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//GOOD TIMES//Experience Plan//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:3694df24-2bf6-4967-85c3-db7cf4f50d84-0@thegoodtimesworldwide.com
+DTSTAMP:20260927T200000Z
+DTSTART;TZID=America/New_York:20260927T190000
+SUMMARY:Revel Atlanta
+LOCATION:Test address\, Atlanta
+DESCRIPTION:GOOD TIMES suggestion — not a reservation. https://example.test/venue/1
+END:VEVENT
+BEGIN:VEVENT
+UID:3694df24-2bf6-4967-85c3-db7cf4f50d84-1@thegoodtimesworldwide.com
+DTSTAMP:20260927T200000Z
+DTSTART;TZID=America/New_York:20260927T203000
+SUMMARY:Utopia
+LOCATION:Test address\, Atlanta
+DESCRIPTION:GOOD TIMES suggestion — not a reservation. https://example.test/venue/2
+END:VEVENT
+END:VCALENDAR

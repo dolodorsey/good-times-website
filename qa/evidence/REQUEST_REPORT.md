@@ -15,7 +15,7 @@ Public WEB forms with all submissions intercepted. No real requests, emails, SMS
 - PASS: 1440 group: usable scrolling, valid fields and recoverable error
 - PASS: 1440 group: retry submits once with correct type and no implicit SMS consent
 - PASS: 390 join: complete form and invalid-submit protection
-- FAIL: 390 join: usable scrolling, valid fields and recoverable error — Submit must scroll into usable viewport
+- PASS: 390 join: usable scrolling, valid fields and recoverable error
 - PASS: 390 join: retry submits once with correct type and no implicit SMS consent
 - PASS: 390 concierge-request: complete form and invalid-submit protection
 - PASS: 390 concierge-request: usable scrolling, valid fields and recoverable error
