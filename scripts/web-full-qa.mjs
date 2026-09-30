@@ -64,7 +64,7 @@ try{
       await page.locator('.gtc-stop').nth(1).getByRole('button',{name:'Move up',exact:true}).click();assert.equal(await stop().locator('h2').innerText(),original);
       await stop().getByRole('button',{name:'Swap',exact:true}).click();await page.locator('.gtc-swap-choices button').first().waitFor();await page.locator('.gtc-swap-choices button').first().click();await page.locator('.gtc-swap').waitFor({state:'detached'});assert.notEqual(await stop().locator('h2').innerText(),original);
       await page.locator('.gtc-stop').last().getByRole('button',{name:'Remove',exact:true}).click();assert.equal(await page.locator('.gtc-stop').count(),count-1);
-      await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.getByRole('status').filter({hasText:'Plan saved.'}).waitFor();assert.equal(state.plans[0].stops.length,count-1);
+      await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.locator('.gtc-itinerary').getByRole('status').filter({hasText:'Plan saved.'}).waitFor();assert.equal(state.plans[0].stops.length,count-1);
       const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Add to calendar',exact:true}).click();const download=await pending;assert.equal(download.suggestedFilename(),'good-times-plan.ics');await download.saveAs(path.join(OUT,'verified-plan-export.ics'));assert.match(fs.readFileSync(path.join(OUT,'verified-plan-export.ics'),'utf8'),/BEGIN:VCALENDAR/);
       await page.evaluate(()=>{Object.defineProperty(navigator,'share',{configurable:true,value:undefined});Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__qaPlanClipboard=text}}})});
       await page.getByRole('button',{name:'Share details',exact:true}).click();await page.waitForFunction(()=>window.__qaPlanClipboard?.includes('Recommendations only.'));await page.getByRole('button',{name:'Close itinerary'}).click();
@@ -77,7 +77,7 @@ try{
   }finally{fs.writeFileSync(path.join(OUT,width+'-final-dom.txt'),await visibleText(page).catch(()=>''));await context.close()}
  }
 }finally{
- await browser?.close();server.kill();report.completedAt=new Date().toISOString();report.passed=report.errors.length===0&&report.checks.length>=116;report.passCount=report.checks.filter(x=>x.status==='PASS').length;report.failCount=report.errors.length;fs.writeFileSync(path.join(OUT,'report.json'),JSON.stringify(report,null,2));
+ await browser?.close();server.kill();report.completedAt=new Date().toISOString();report.passed=report.errors.length===0&&report.checks.length>=117;report.passCount=report.checks.filter(x=>x.status==='PASS').length;report.failCount=report.errors.length;fs.writeFileSync(path.join(OUT,'report.json'),JSON.stringify(report,null,2));
  const lines=['# GOOD TIMES web verification','',`Passed: ${report.passCount}. Failed: ${report.failCount}.`,'','Scope: compiled UI, controlled account/content fixtures, actual copied local image assets.','Live OAuth, production payments, production deployment and live account synchronization are NOT certified by this report.','No source app repository or production database writes.','',...report.checks.map(x=>`- ${x.status}: ${x.name}${x.error?' — '+x.error.split('\n')[0]:''}`)];fs.writeFileSync(path.join(OUT,'REPORT.md'),lines.join('\n')+'\n');console.log(JSON.stringify({pass:report.passCount,fail:report.failCount,errors:report.errors},null,2));
 }
 if(report.errors.length)process.exitCode=1;
