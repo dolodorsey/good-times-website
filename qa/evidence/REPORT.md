@@ -1,17 +1,95 @@
 # GOOD TIMES web verification
 
-Passed: 32. Failed: 6.
+Passed: 116. Failed: 0.
 
 Scope: compiled UI, controlled account/content fixtures, actual copied local image assets.
 Live OAuth, production payments, production deployment and live account synchronization are NOT certified by this report.
 No source app repository or production database writes.
 
 - PASS: Browser URL parsing is bounded to existing primary sections
-- FAIL: 1024: full Home and real primary navigation — Desktop app must fill browser width
-- FAIL: 1280: full Home and real primary navigation — Desktop app must fill browser width
-- FAIL: 1366: full Home and real primary navigation — Desktop app must fill browser width
-- FAIL: 1440: full Home and real primary navigation — Content escapes browser
-- FAIL: 1920: full Home and real primary navigation — Content escapes browser
+- PASS: 1024: full Home and real primary navigation
+- PASS: 1024: local logo and bundled venue images resolve
+- PASS: 1024: Home Tonight / Upcoming / For You controls
+- PASS: 1024: Places and restaurant entrance
+- PASS: 1024: Entertainment categories and timing controls
+- PASS: 1024: every Entertainment category button routes
+- PASS: 1024: Bars & Lounges, categories, save, detail and return
+- PASS: 1024: Map view is selectable without losing directory
+- PASS: 1024: Profile library, following, preferences, account
+- PASS: 1024: guided planner generates but does not auto-save/book
+- PASS: 1024: itinerary save and persisted Profile library
+- PASS: 1024: Ask and Shake interfaces
+- PASS: 1024: browser Back, Forward and reload preserve primary page
+- PASS: 1024: Radar opens and returns via primary navigation
+- PASS: 1024: search submission produces global results
+- PASS: 1024: no browser JavaScript crashes
+- PASS: 1280: full Home and real primary navigation
+- PASS: 1280: local logo and bundled venue images resolve
+- PASS: 1280: Home Tonight / Upcoming / For You controls
+- PASS: 1280: Places and restaurant entrance
+- PASS: 1280: Entertainment categories and timing controls
+- PASS: 1280: every Entertainment category button routes
+- PASS: 1280: Bars & Lounges, categories, save, detail and return
+- PASS: 1280: Map view is selectable without losing directory
+- PASS: 1280: Profile library, following, preferences, account
+- PASS: 1280: guided planner generates but does not auto-save/book
+- PASS: 1280: itinerary save and persisted Profile library
+- PASS: 1280: Ask and Shake interfaces
+- PASS: 1280: browser Back, Forward and reload preserve primary page
+- PASS: 1280: Radar opens and returns via primary navigation
+- PASS: 1280: search submission produces global results
+- PASS: 1280: no browser JavaScript crashes
+- PASS: 1366: full Home and real primary navigation
+- PASS: 1366: local logo and bundled venue images resolve
+- PASS: 1366: Home Tonight / Upcoming / For You controls
+- PASS: 1366: Places and restaurant entrance
+- PASS: 1366: Entertainment categories and timing controls
+- PASS: 1366: every Entertainment category button routes
+- PASS: 1366: Bars & Lounges, categories, save, detail and return
+- PASS: 1366: Map view is selectable without losing directory
+- PASS: 1366: Profile library, following, preferences, account
+- PASS: 1366: guided planner generates but does not auto-save/book
+- PASS: 1366: itinerary save and persisted Profile library
+- PASS: 1366: Ask and Shake interfaces
+- PASS: 1366: browser Back, Forward and reload preserve primary page
+- PASS: 1366: Radar opens and returns via primary navigation
+- PASS: 1366: search submission produces global results
+- PASS: 1366: no browser JavaScript crashes
+- PASS: 1440: full Home and real primary navigation
+- PASS: 1440: local logo and bundled venue images resolve
+- PASS: 1440: Home Tonight / Upcoming / For You controls
+- PASS: 1440: Places and restaurant entrance
+- PASS: 1440: Entertainment categories and timing controls
+- PASS: 1440: every Entertainment category button routes
+- PASS: 1440: Bars & Lounges, categories, save, detail and return
+- PASS: 1440: Map view is selectable without losing directory
+- PASS: 1440: Profile library, following, preferences, account
+- PASS: 1440: guided planner generates but does not auto-save/book
+- PASS: 1440: itinerary save and persisted Profile library
+- PASS: 1440: Ask and Shake interfaces
+- PASS: 1440: browser Back, Forward and reload preserve primary page
+- PASS: 1440: Radar opens and returns via primary navigation
+- PASS: 1440: search submission produces global results
+- PASS: 1440: no browser JavaScript crashes
+- PASS: Failures: a rejected save is not displayed as success
+- PASS: Failures: directory error has actionable retry
+- PASS: Failures: failed plan edit preserves saved plan and retry works
+- PASS: 1920: full Home and real primary navigation
+- PASS: 1920: local logo and bundled venue images resolve
+- PASS: 1920: Home Tonight / Upcoming / For You controls
+- PASS: 1920: Places and restaurant entrance
+- PASS: 1920: Entertainment categories and timing controls
+- PASS: 1920: every Entertainment category button routes
+- PASS: 1920: Bars & Lounges, categories, save, detail and return
+- PASS: 1920: Map view is selectable without losing directory
+- PASS: 1920: Profile library, following, preferences, account
+- PASS: 1920: guided planner generates but does not auto-save/book
+- PASS: 1920: itinerary save and persisted Profile library
+- PASS: 1920: Ask and Shake interfaces
+- PASS: 1920: browser Back, Forward and reload preserve primary page
+- PASS: 1920: Radar opens and returns via primary navigation
+- PASS: 1920: search submission produces global results
+- PASS: 1920: no browser JavaScript crashes
 - PASS: 768: full Home and real primary navigation
 - PASS: 768: local logo and bundled venue images resolve
 - PASS: 768: Home Tonight / Upcoming / For You controls
@@ -42,5 +120,5 @@ No source app repository or production database writes.
 - PASS: 390: Ask and Shake interfaces
 - PASS: 390: browser Back, Forward and reload preserve primary page
 - PASS: 390: Radar opens and returns via primary navigation
-- FAIL: 390: search submission produces global results — The expression evaluated to a falsy value:
+- PASS: 390: search submission produces global results
 - PASS: 390: no browser JavaScript crashes

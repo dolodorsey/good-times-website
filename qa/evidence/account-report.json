@@ -1,0 +1,86 @@
+{
+  "mode": "Controlled sign-in/signup/recovery responses, never real credentials, mail, OAuth provider or customer writes.",
+  "liveAuthenticationVerified": false,
+  "tests": [
+    {
+      "name": "1440: signed-out welcome and valid account entrance",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: invalid login error preserves form",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: reset request stays on WEB origin and reports completion",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: Enter submits login and session survives page reload",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: logout really clears WEB session",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: signup handles confirmation-required response truthfully",
+      "status": "FAIL",
+      "error": "locator.waitFor: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByText('Your account was created. Check your email to confirm it, then sign in.', { exact: true }) to be visible\n"
+    },
+    {
+      "name": "1440: Google button makes correct WEB-only redirect handoff",
+      "status": "FAIL",
+      "error": "locator.click: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /Continue with Google/ })\n"
+    },
+    {
+      "name": "390: signed-out welcome and valid account entrance",
+      "status": "PASS"
+    },
+    {
+      "name": "390: invalid login error preserves form",
+      "status": "PASS"
+    },
+    {
+      "name": "390: reset request stays on WEB origin and reports completion",
+      "status": "PASS"
+    },
+    {
+      "name": "390: Enter submits login and session survives page reload",
+      "status": "PASS"
+    },
+    {
+      "name": "390: logout really clears WEB session",
+      "status": "PASS"
+    },
+    {
+      "name": "390: signup handles confirmation-required response truthfully",
+      "status": "FAIL",
+      "error": "locator.waitFor: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByText('Your account was created. Check your email to confirm it, then sign in.', { exact: true }) to be visible\n"
+    },
+    {
+      "name": "390: Google button makes correct WEB-only redirect handoff",
+      "status": "FAIL",
+      "error": "locator.click: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /Continue with Google/ })\n"
+    }
+  ],
+  "errors": [
+    {
+      "name": "1440: signup handles confirmation-required response truthfully",
+      "error": "locator.waitFor: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByText('Your account was created. Check your email to confirm it, then sign in.', { exact: true }) to be visible\n"
+    },
+    {
+      "name": "1440: Google button makes correct WEB-only redirect handoff",
+      "error": "locator.click: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /Continue with Google/ })\n"
+    },
+    {
+      "name": "390: signup handles confirmation-required response truthfully",
+      "error": "locator.waitFor: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByText('Your account was created. Check your email to confirm it, then sign in.', { exact: true }) to be visible\n"
+    },
+    {
+      "name": "390: Google button makes correct WEB-only redirect handoff",
+      "error": "locator.click: Timeout 8000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /Continue with Google/ })\n"
+    }
+  ],
+  "passed": false,
+  "completedAt": "2026-09-30T05:41:23.238Z"
+}
