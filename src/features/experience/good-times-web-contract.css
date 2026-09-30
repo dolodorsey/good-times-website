@@ -94,3 +94,6 @@ body#good-times-web.gt-web-mode .gt5-nav button[aria-current=page]{color:var(--g
  html body#good-times-web.gt-web-mode #root .gtc-profile-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
 }
 @media(min-width:1600px){html body#good-times-web.gt-web-mode #root .gtc-plan-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+
+/* WEB DIRECT FORM SCROLL: long public request forms must not be trapped by the app shell. */
+html body#good-times-web.gt-web-mode #root .gt-premium-experience>main{height:100dvh!important;min-height:0!important;max-height:100dvh!important;width:100%!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;scrollbar-width:thin!important}

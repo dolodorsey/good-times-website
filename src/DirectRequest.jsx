@@ -1,3 +1,4 @@
+import { publicApiHeaders } from './lib/public-api-headers.js';
 import React, { useMemo, useRef, useState } from 'react';
 import { localTodayISO, validateDirectRequest } from './direct-request-validation.js';
 
@@ -82,12 +83,10 @@ export default function DirectRequest({ requestType }) {
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/good_times_consumer_requests`, {
         method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
+        headers: publicApiHeaders(SUPABASE_KEY, {
           'Content-Type': 'application/json',
           Prefer: 'return=minimal',
-        },
+        }),
         body: JSON.stringify({
           request_type: requestType,
           full_name: form.full_name.trim(),

@@ -27,7 +27,7 @@ const server=spawn(process.execPath,['scripts/serve-dist.mjs'],{env:{...process.
 let browser;
 try{
  for(let i=0;i<80;i++){try{if((await fetch(BASE+'/api/health')).ok)break}catch{}await pause(100)}
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE||undefined,args:['--no-sandbox']});
  await log('Browser URL parsing is bounded to existing primary sections',async()=>{for(const tab of ['home','places','plan','entertainment','profile'])assert.equal(readWebRoute(BASE+'/?view='+tab).tab,tab);assert.equal(readWebRoute(BASE+'/?view=javascript:alert(1)').tab,'home')});
  for(const width of [1024,1280,1366,1440,1920,768,390]){
   const context=await browser.newContext({viewport:{width,height:width>=1024?900:width===768?1024:844},timezoneId:'America/New_York',reducedMotion:'reduce'}),state=makeState(),page=await context.newPage(),browserErrors=[];
@@ -55,6 +55,21 @@ try{
    await log(`${width}: search submission produces global results`,async()=>{await nav(page,'Home');await page.getByRole('textbox',{name:'Search Atlanta',exact:true}).fill('Opium');await page.getByRole('textbox',{name:'Search Atlanta',exact:true}).press('Enter');await page.locator('.gt5-app[data-screen="search"]').waitFor();await page.waitForFunction(()=>/opium/i.test(document.body.innerText));assert.ok(/opium/i.test(await visibleText(page)));await snap(page,`${width}-search`)});
    await log(`${width}: no browser JavaScript crashes`,async()=>assert.deepEqual(browserErrors,[]));
    if(width===1440){
+    await log('Desktop itinerary editing and export controls',async()=>{
+      await nav(page,'Profile');await page.locator('.gtc-plan-tile').first().click();await page.locator('.gtc-itinerary').waitFor();
+      const stop=()=>page.locator('.gtc-stop').first();const count=await page.locator('.gtc-stop').count();assert.ok(count>1);
+      await stop().getByRole('button',{name:'Lock',exact:true}).click();assert.ok(await stop().getByRole('button',{name:'Remove',exact:true}).isDisabled());
+      await stop().getByRole('button',{name:'Unlock',exact:true}).click();const original=await stop().locator('h2').innerText();
+      await stop().getByRole('button',{name:'Move down',exact:true}).click();assert.notEqual(await stop().locator('h2').innerText(),original);
+      await page.locator('.gtc-stop').nth(1).getByRole('button',{name:'Move up',exact:true}).click();assert.equal(await stop().locator('h2').innerText(),original);
+      await stop().getByRole('button',{name:'Swap',exact:true}).click();await page.locator('.gtc-swap-choices button').first().waitFor();await page.locator('.gtc-swap-choices button').first().click();await page.locator('.gtc-swap').waitFor({state:'detached'});assert.notEqual(await stop().locator('h2').innerText(),original);
+      await page.locator('.gtc-stop').last().getByRole('button',{name:'Remove',exact:true}).click();assert.equal(await page.locator('.gtc-stop').count(),count-1);
+      await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.getByRole('status').filter({hasText:'Plan saved.'}).waitFor();assert.equal(state.plans[0].stops.length,count-1);
+      const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Add to calendar',exact:true}).click();const download=await pending;assert.equal(download.suggestedFilename(),'good-times-plan.ics');await download.saveAs(path.join(OUT,'verified-plan-export.ics'));assert.match(fs.readFileSync(path.join(OUT,'verified-plan-export.ics'),'utf8'),/BEGIN:VCALENDAR/);
+      await page.evaluate(()=>{Object.defineProperty(navigator,'share',{configurable:true,value:undefined});Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__qaPlanClipboard=text}}})});
+      await page.getByRole('button',{name:'Share details',exact:true}).click();await page.waitForFunction(()=>window.__qaPlanClipboard?.includes('Recommendations only.'));await page.getByRole('button',{name:'Close itinerary'}).click();
+    });
+ 
     await log('Failures: a rejected save is not displayed as success',async()=>{await nav(page,'Entertainment');await page.locator('.gtc-entertainment-lane').filter({hasText:'Bars & Lounges'}).click();await page.locator('[data-gt-subcategory="nightclubs"]').click();await page.locator('.gt-compact-results .gtc-card').first().waitFor();state.failSave=true;const count=state.saved.length;await page.locator('.gt-compact-results .gtc-save').nth(1).click();await pause(350);assert.equal(state.saved.length,count);assert.equal(await page.locator('.gt-compact-results .gtc-save').nth(1).getAttribute('aria-pressed'),'false');state.failSave=false});
     await log('Failures: directory error has actionable retry',async()=>{state.failDirectory=true;await page.getByRole('button',{name:'Refresh places'}).click();await page.getByRole('button',{name:'Retry places'}).waitFor();state.failDirectory=false;await page.getByRole('button',{name:'Retry places'}).click();await page.locator('.gt-compact-results .gtc-card').first().waitFor()});
     await log('Failures: failed plan edit preserves saved plan and retry works',async()=>{await nav(page,'Profile');await page.locator('.gtc-plan-tile').first().click();await page.locator('.gtc-itinerary').waitFor();const before=state.plans[0].name;await page.getByRole('textbox',{name:'Plan name'}).fill('Edited desktop QA night');state.failPlanSave=true;await page.getByRole('button',{name:'Save changes'}).click();await page.getByRole('alert').filter({hasText:'Could not update plan'}).waitFor();assert.equal(state.plans[0].name,before);state.failPlanSave=false;await page.getByRole('button',{name:'Save changes'}).click();await pause(350);assert.equal(state.plans[0].name,'Edited desktop QA night');await page.getByRole('button',{name:'Close itinerary'}).click()});
@@ -62,7 +77,7 @@ try{
   }finally{fs.writeFileSync(path.join(OUT,width+'-final-dom.txt'),await visibleText(page).catch(()=>''));await context.close()}
  }
 }finally{
- await browser?.close();server.kill();report.completedAt=new Date().toISOString();report.passed=report.errors.length===0;report.passCount=report.checks.filter(x=>x.status==='PASS').length;report.failCount=report.errors.length;fs.writeFileSync(path.join(OUT,'report.json'),JSON.stringify(report,null,2));
+ await browser?.close();server.kill();report.completedAt=new Date().toISOString();report.passed=report.errors.length===0&&report.checks.length>=116;report.passCount=report.checks.filter(x=>x.status==='PASS').length;report.failCount=report.errors.length;fs.writeFileSync(path.join(OUT,'report.json'),JSON.stringify(report,null,2));
  const lines=['# GOOD TIMES web verification','',`Passed: ${report.passCount}. Failed: ${report.failCount}.`,'','Scope: compiled UI, controlled account/content fixtures, actual copied local image assets.','Live OAuth, production payments, production deployment and live account synchronization are NOT certified by this report.','No source app repository or production database writes.','',...report.checks.map(x=>`- ${x.status}: ${x.name}${x.error?' — '+x.error.split('\n')[0]:''}`)];fs.writeFileSync(path.join(OUT,'REPORT.md'),lines.join('\n')+'\n');console.log(JSON.stringify({pass:report.passCount,fail:report.failCount,errors:report.errors},null,2));
 }
 if(report.errors.length)process.exitCode=1;
