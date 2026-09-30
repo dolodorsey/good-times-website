@@ -140,7 +140,7 @@ export default function DirectRequest({ requestType }) {
 
   return (
     <Page>
-      <section style={styles.shell}>
+      <section className="gt-web-request-shell" style={styles.shell}>
         <a href="/" style={styles.back}>← Good Times app</a>
         <div style={styles.eyebrow}>{meta.eyebrow}</div>
         <h1 style={styles.heroTitle}>{meta.title}</h1>
@@ -148,7 +148,7 @@ export default function DirectRequest({ requestType }) {
 
         <form ref={formRef} onSubmit={submit} onInvalid={() => setAttempted(true)} style={styles.card}>
           <p style={styles.formHint}>Tell us the essentials. Optional details help us tailor your experience.</p>
-          <div style={styles.grid}>
+          <div className="gt-web-request-grid" style={styles.grid}>
             <Field fieldKey="full_name" error={attempted ? validation.errors.full_name : null} label="Full name"><input value={form.full_name} onChange={(event) => update('full_name', event.target.value)} autoComplete="name" required minLength="2" maxLength="120" style={styles.input} /></Field>
             <Field fieldKey="email" error={attempted ? validation.errors.email : null} label="Email"><input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} autoComplete="email" required style={styles.input} /></Field>
             <Field fieldKey="phone" error={attempted ? validation.errors.phone : null} label="Mobile phone" optional><input type="tel" value={form.phone} onChange={(event) => update('phone', event.target.value)} autoComplete="tel" style={styles.input} /></Field>
@@ -181,7 +181,7 @@ export default function DirectRequest({ requestType }) {
 
 function Page({ children }) {
   return (
-    <main style={styles.page}>
+    <main className="gt-web-request-page" style={styles.page}>
 
       {children}
     </main>

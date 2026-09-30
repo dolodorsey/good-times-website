@@ -126,7 +126,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
     onComplete(session, { city, vibes, age })
   }
 
-  if (screen === 'welcome') return <div style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexDirection: 'column', padding: '40px 24px 64px', textAlign: 'center' }}>
+  if (screen === 'welcome') return <div className={`gt-web-auth-page gt-web-auth-${screen}`} style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexDirection: 'column', padding: '40px 24px 64px', textAlign: 'center' }}>
     <Background video />
     <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 360 }}>
       <img src={CURRENT_LOGO} alt="Good Times" style={{ height: 58, objectFit: 'contain', marginBottom: 18 }} />
@@ -137,7 +137,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
     </div>
   </div>
 
-  if (screen === 'auth' || screen === 'forgot') return <div style={{ ...shell, display: 'flex', flexDirection: 'column' }}>
+  if (screen === 'auth' || screen === 'forgot') return <div className={`gt-web-auth-page gt-web-auth-${screen}`} style={{ ...shell, display: 'flex', flexDirection: 'column' }}>
     <Background />
     <div style={{ position: 'relative', zIndex: 2, padding: '18px 20px' }}>
       <button onClick={() => setScreen(screen === 'forgot' ? 'auth' : 'welcome')} style={{ color: 'rgba(255,255,255,.58)', background: 'none', border: 0, cursor: 'pointer' }}>← Back</button>
@@ -189,7 +189,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
   </div>
 
   const step = screen === 'city' ? 0 : screen === 'vibes' ? 1 : 2
-  return <div style={{ ...shell, padding: '52px 24px 32px', display: 'flex', flexDirection: 'column', overflowY:'auto' }}>
+  return <div className={`gt-web-auth-page gt-web-auth-${screen}`} style={{ ...shell, padding: '52px 24px 32px', display: 'flex', flexDirection: 'column', overflowY:'auto' }}>
     <Progress step={step} />
     <div style={{ textAlign: 'center', marginBottom: 24 }}>
       <div style={{ color: GOLD, fontSize: 11, letterSpacing: '.2em', fontWeight: 800 }}>STEP {step + 1} OF 3</div>
