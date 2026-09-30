@@ -1,7 +1,7 @@
-✔ rendered restaurant facts / retry / return at 320 (2987.406387ms)
-✔ rendered restaurant facts / retry / return at 390 (2582.443147ms)
-✔ rendered restaurant facts / retry / return at 834 (3149.23217ms)
-✔ rendered restaurant facts / retry / return at 1440 (2659.279061ms)
+✔ rendered restaurant facts / retry / return at 320 (2310.804362ms)
+✔ rendered restaurant facts / retry / return at 390 (2290.124935ms)
+✔ rendered restaurant facts / retry / return at 834 (2789.978265ms)
+✔ rendered restaurant facts / retry / return at 1440 (2350.135886ms)
 ℹ tests 4
 ℹ suites 0
 ℹ pass 4
@@ -9,4 +9,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 11690.284524
+ℹ duration_ms 9971.141746
