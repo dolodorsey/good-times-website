@@ -97,3 +97,8 @@ body#good-times-web.gt-web-mode .gt5-nav button[aria-current=page]{color:var(--g
 
 /* WEB DIRECT FORM SCROLL: long public request forms must not be trapped by the app shell. */
 html body#good-times-web.gt-web-mode #root .gt-premium-experience>main{height:100dvh!important;min-height:0!important;max-height:100dvh!important;width:100%!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;scrollbar-width:thin!important}
+
+/* WEB NATURAL HEIGHT DIALOGS: the outer overlay scrolls; long article content must remain inside its card. */
+@media(min-width:1024px){
+ html body#good-times-web.gt-web-mode #root .gt5-overlay>:where(.gtc-detail,.gtc-itinerary,.gt5-detail,.gt5-itinerary){height:auto!important;min-height:0!important;max-height:none!important;flex:0 0 auto!important;align-self:flex-start!important}
+}

@@ -113,6 +113,14 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
   await dialog.locator('.gtc-detail-facts').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(folder,'02-restaurant-facts.png')})
   const overflow=await dialog.evaluate(el=>({dialog:el.scrollWidth-el.clientWidth,body:document.documentElement.scrollWidth-innerWidth}))
   assert.ok(overflow.dialog<=2&&overflow.body<=2,JSON.stringify(overflow))
+  if(width>=1024){
+   const bounds=await dialog.evaluate(el=>{const a=el.querySelector('.gtc-detail'),b=el.querySelector('.gtc-detail-copy');return {article:a.getBoundingClientRect().toJSON(),content:b.getBoundingClientRect().toJSON()}});
+   assert.ok(bounds.article.bottom>=bounds.content.bottom-1,'Desktop dialog must contain its entire content: '+JSON.stringify(bounds));
+   await dialog.locator('.gtc-detail-support').scrollIntoViewIfNeeded();
+   const buttons=await dialog.locator('.gtc-detail-support').boundingBox();assert.ok(buttons&&buttons.y>=-1&&buttons.y+buttons.height<=1001,'Detail action buttons must be reachable');
+   await page.screenshot({path:path.join(folder,'06-complete-detail-footer.png')});
+  }
+
   await dialog.getByRole('tab',{name:'Information',exact:true}).click();await dialog.getByRole('link',{name:/View source/}).waitFor()
   await dialog.getByRole('tab',{name:'Overview',exact:true}).click();await dialog.locator('.gtc-detail-facts').getByText('Tapas',{exact:true}).waitFor()
   await dialog.getByRole('button',{name:'Back to results',exact:true}).click()
