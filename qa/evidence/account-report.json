@@ -1,0 +1,65 @@
+{
+  "mode": "Controlled sign-in/signup/recovery responses, never real credentials, mail, OAuth provider or customer writes.",
+  "liveAuthenticationVerified": false,
+  "tests": [
+    {
+      "name": "1440: signed-out welcome and valid account entrance",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: invalid login error preserves form",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: reset request stays on WEB origin and reports completion",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: Enter submits login and session survives page reload",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: logout really clears WEB session",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: signup handles confirmation-required response truthfully",
+      "status": "PASS"
+    },
+    {
+      "name": "1440: Google button makes correct WEB-only redirect handoff",
+      "status": "PASS"
+    },
+    {
+      "name": "390: signed-out welcome and valid account entrance",
+      "status": "PASS"
+    },
+    {
+      "name": "390: invalid login error preserves form",
+      "status": "PASS"
+    },
+    {
+      "name": "390: reset request stays on WEB origin and reports completion",
+      "status": "PASS"
+    },
+    {
+      "name": "390: Enter submits login and session survives page reload",
+      "status": "PASS"
+    },
+    {
+      "name": "390: logout really clears WEB session",
+      "status": "PASS"
+    },
+    {
+      "name": "390: signup handles confirmation-required response truthfully",
+      "status": "PASS"
+    },
+    {
+      "name": "390: Google button makes correct WEB-only redirect handoff",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "completedAt": "2026-09-30T06:12:35.616Z"
+}
